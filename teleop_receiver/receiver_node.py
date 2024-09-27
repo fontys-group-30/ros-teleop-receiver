@@ -31,12 +31,10 @@ class ReceiverNode(Node):
 
         # Calculate and log wheel velocities
         wheel1, wheel2, wheel3, wheel4 = self.compute_wheel_velocities(msg)
-        message = f"Wheel 1={wheel1}, Wheel 2={wheel2}, Wheel 3={wheel3}, Wheel 4={wheel4}"
-        self.get_logger().info(message)
 
         # Send the wheel velocities to the Arduino
         try:
-            message_str = f"{wheel1},{wheel2},{wheel3},{wheel4}\n"
+            message_str = f"IN: {round(wheel1, 1)},{round(wheel2, 1)},{round(wheel3, 1)},{round(wheel4, 1)} \n"
             self.serial_connection.write(message_str.encode())
             self.get_logger().info(message_str)
         except Exception as e:
