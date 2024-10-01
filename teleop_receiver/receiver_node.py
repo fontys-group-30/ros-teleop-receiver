@@ -42,10 +42,10 @@ class ReceiverNode(Node):
 
     def compute_wheel_velocities(self, msg: Twist):
         # Calculate the angular velocity of the wheels in rad/s
-        wheel_front_left = (msg.linear.x - msg.linear.y - msg.angular.z) / 0.08
-        wheel_front_right = (msg.linear.x + msg.linear.y + msg.angular.z) / 0.08
-        wheel_back_left = (msg.linear.x + msg.linear.y - msg.angular.z) / 0.08
-        wheel_back_right = (msg.linear.x - msg.linear.y + msg.angular.z) / 0.08
+        wheel_front_left = (msg.linear.x - msg.linear.y - msg.angular.z) / 0.04
+        wheel_front_right = (msg.linear.x + msg.linear.y + msg.angular.z) / 0.04
+        wheel_back_left = (msg.linear.x + msg.linear.y - msg.angular.z) / 0.04
+        wheel_back_right = (msg.linear.x - msg.linear.y + msg.angular.z) / 0.04
         return wheel_front_left, wheel_front_right, wheel_back_left, wheel_back_right
 
 def main(args=None):
