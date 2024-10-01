@@ -39,7 +39,7 @@ def main():
     rclpy.init()
 
     # Create the static transform broadcaster node
-    node = StaticTransformBroadcaster(('world', 'odom', 0, 0, 0))
+    node = StaticTransformBroadcaster()
 
     # Keep the node alive
     rclpy.spin(node)
