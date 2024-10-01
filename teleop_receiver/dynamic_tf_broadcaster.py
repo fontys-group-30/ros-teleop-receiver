@@ -97,6 +97,7 @@ class DynamicTransformBroadcaster(Node):
         t.header.frame_id = 'odom'  # Parent frame
         t.child_frame_id = 'base_footprint'  # Child frame
 
+
         # Compute the new position and orientation
         delta_x, delta_y, delta_theta = compute_transformations(
             (self.x, self.y, self.theta),
