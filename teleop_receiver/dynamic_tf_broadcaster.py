@@ -12,25 +12,20 @@ def compute_distance_from_odom(wheel_front_left, wheel_front_right, wheel_back_l
     W = 0.15  # Distance from center to side wheels
 
     # Compute velocities in the robot's local frame
-    Vx = (r / 4) * (wheel_front_left + wheel_front_right + wheel_back_left + wheel_back_right)
-    Vy = (r / 4) * (-wheel_front_left + wheel_front_right + wheel_back_left - wheel_back_right)
+    Vx = (((wheel_front_left + wheel_front_right + wheel_back_left + wheel_back_right)/4)/1440) * (r * 2 * np.pi)
+    Vy = (((-wheel_front_left + wheel_front_right + wheel_back_left - wheel_back_right)/4)/1440) * (r * 2 * np.pi)
 
     # Compute the angular velocity, accounting for both length (L) and width (W)
-    omega = (r / (4 * (L + W))) * (-wheel_front_left + wheel_front_right - wheel_back_left + wheel_back_right)
+    omega = (r / (4 * (L + W))) * ((-wheel_front_left + wheel_front_right - wheel_back_left + wheel_back_right)/4)/1440)
 
     return Vx, Vy, omega
 
 
 def compute_transformations(old_position, wheel_front_left, wheel_front_right, wheel_back_left, wheel_back_right):
     x, y, omega = compute_distance_from_odom(wheel_front_left, wheel_front_right, wheel_back_left, wheel_back_right)
-    theta = old_position[2]
-
-    # Rotate the local frame velocities (x, y) into the global frame
-    tx = x * math.cos(theta) - y * math.sin(theta)
-    ty = x * math.sin(theta) + y * math.cos(theta)
-
-    # Orientation change remains the same
-    tomega = omega
+    tx = x - old_position[0]
+    ty = y - old_position[1]
+    tomega = omega - old_position[2]
 
     return tx, ty, tomega
 
