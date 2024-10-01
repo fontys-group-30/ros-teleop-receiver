@@ -6,14 +6,14 @@ import tf2_ros
 import math
 import numpy as np
 
-def compute_distance_from_odom(wheel1, wheel2, wheel3, wheel4):
-    x = 2 * np.pi / 1140 * (wheel1 + wheel2 + wheel3 + wheel4) * 0.08 / 4
-    y = 2 * np.pi / 1140 * (-wheel1 + wheel2 - wheel3 + wheel4) * 0.08 / 4
-    omega = 2 * np.pi / 1140 * (-wheel1 + wheel2 + wheel3 - wheel4) * 0.08 / 4
+def compute_distance_from_odom(wheel_front_left, wheel_front_right, wheel_back_left, wheel_back_right):
+    x = 2 * np.pi / 1140 * (wheel_front_left + wheel_front_right + wheel_back_left + wheel_back_right) * 0.08 / 4
+    y = 2 * np.pi / 1140 * (-wheel_front_left + wheel_front_right + wheel_back_left - wheel_back_right) * 0.08 / 4
+    omega = 2 * np.pi / 1140 * (-wheel_front_left + wheel_front_right - wheel_back_left + wheel_back_right) * 0.08 / 4
     return x, y, omega
 
-def compute_transformations(old_position, wheel1, wheel2, wheel3, wheel4):
-    x, y, omega = compute_distance_from_odom(wheel1, wheel2, wheel3, wheel4)
+def compute_transformations(old_position, wheel_front_left, wheel_front_right, wheel_back_left, wheel_back_right):
+    x, y, omega = compute_distance_from_odom(wheel_front_left, wheel_front_right, wheel_back_left, wheel_back_right)
     tx = x - old_position[0]
     ty = y - old_position[1]
     tomega = omega - old_position[2]
@@ -38,10 +38,10 @@ class DynamicTransformBroadcaster(Node):
         self.theta = 0.0
 
         # Initialize wheel speeds
-        self.wheel1_speed = 0.0
-        self.wheel2_speed = 0.0
-        self.wheel3_speed = 0.0
-        self.wheel4_speed = 0.0
+        self.wheel_front_left = 0.0
+        self.wheel_front_right = 0.0
+        self.wheel_back_left = 0.0
+        self.wheel_back_right = 0.0
 
         # Create a subscriber to receive wheel speed data
         self.subscription = self.create_subscription(
@@ -73,7 +73,7 @@ class DynamicTransformBroadcaster(Node):
 
                 if serial_data.startswith("OUT: "):
                     wheel_speeds = serial_data[4:].split(',')
-                    self.wheel1_speed, self.wheel2_speed, self.wheel3_speed, self.wheel4_speed = map(float, wheel_speeds)
+                    self.wheel_front_left, self.wheel_front_right, self.wheel_back_left, self.wheel_back_right = map(float, wheel_speeds)
 
         except Exception as e:
             self.get_logger().error(f"Failed to read from serial connection: {str(e)}")
@@ -91,10 +91,10 @@ class DynamicTransformBroadcaster(Node):
         # Compute the new position and orientation
         delta_x, delta_y, delta_theta = compute_transformations(
             (self.x, self.y, self.theta),
-            self.wheel1_speed,
-            self.wheel2_speed,
-            self.wheel3_speed,
-            self.wheel4_speed
+            self.wheel_front_left,
+            self.wheel_front_right,
+            self.wheel_back_left,
+            self.wheel_back_right
         )
 
         # Update the current position and orientation
@@ -114,10 +114,10 @@ class DynamicTransformBroadcaster(Node):
 
     def receiver_callback(self, msg: Twist):
         # Update wheel speeds based on the message from ReceiverNode
-        self.wheel1_speed = msg.linear.x
-        self.wheel2_speed = msg.linear.y
-        self.wheel3_speed = msg.angular.z
-        self.wheel4_speed = msg.angular.z
+        self.wheel_front_left = msg.linear.x
+        self.wheel_front_right = msg.linear.y
+        self.wheel_back_left = msg.angular.z
+        self.wheel_back_right = msg.angular.z
 
 def main():
     # Initialize the ROS2 Python client library
