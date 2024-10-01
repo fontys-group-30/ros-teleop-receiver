@@ -7,9 +7,9 @@ import math
 import numpy as np
 
 def compute_distance_from_odom(wheel_front_left, wheel_front_right, wheel_back_left, wheel_back_right):
-    x = 2 * np.pi / 1140 * (wheel_front_left + wheel_front_right + wheel_back_left + wheel_back_right) * 0.08 / 4
-    y = 2 * np.pi / 1140 * (-wheel_front_left + wheel_front_right + wheel_back_left - wheel_back_right) * 0.08 / 4
-    omega = 2 * np.pi / 1140 * (-wheel_front_left + wheel_front_right - wheel_back_left + wheel_back_right) * 0.08 / 4
+    x = 2 * np.pi / 1440 * (wheel_front_left + wheel_front_right + wheel_back_left + wheel_back_right) * 0.08 / 4
+    y = 2 * np.pi / 1440 * (-wheel_front_left + wheel_front_right + wheel_back_left - wheel_back_right) * 0.08 / 4
+    omega = 2 * np.pi / 1440 * (-wheel_front_left + wheel_front_right - wheel_back_left + wheel_back_right) * 0.08 / 4
     return x, y, omega
 
 def compute_transformations(old_position, wheel_front_left, wheel_front_right, wheel_back_left, wheel_back_right):
