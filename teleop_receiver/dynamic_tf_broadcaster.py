@@ -43,14 +43,6 @@ class DynamicTransformBroadcaster(Node):
         self.wheel_back_left = 0.0
         self.wheel_back_right = 0.0
 
-        # Create a subscriber to receive wheel speed data
-        self.subscription = self.create_subscription(
-            Twist,
-            '/receiver_node_topic',
-            self.receiver_callback,
-            10
-        )
-
         # Set up a timer to call update every 0.1 seconds
         self.timer = self.create_timer(0.1, self.update)
 
@@ -111,13 +103,6 @@ class DynamicTransformBroadcaster(Node):
 
         # Send the dynamic transform
         self.broadcaster.sendTransform(t)
-
-    def receiver_callback(self, msg: Twist):
-        # Update wheel speeds based on the message from ReceiverNode
-        self.wheel_front_left = msg.linear.x
-        self.wheel_front_right = msg.linear.y
-        self.wheel_back_left = msg.angular.z
-        self.wheel_back_right = msg.angular.z
 
 def main():
     # Initialize the ROS2 Python client library
