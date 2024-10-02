@@ -15,9 +15,9 @@
   <exec_depend>python3-numpy</exec_depend>
   <exec_depend>rclpy</exec_depend>
   <exec_depend>tf2_ros_py</exec_depend>
+  <exec_depend>slam_toolbox</exec_depend>
   <depend>launch</depend>
   <depend>launch_ros</depend>
-
 
   <export>
     <build_type>ament_python</build_type>
