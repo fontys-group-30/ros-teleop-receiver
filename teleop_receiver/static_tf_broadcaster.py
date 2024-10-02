@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import math
 
 import rclpy
 import tf2_ros
@@ -27,7 +28,7 @@ class StaticTransformBroadcaster(Node):
         t.transform.translation.z = float(z)
         t.transform.rotation.x = 0.0
         t.transform.rotation.y = 0.0
-        t.transform.rotation.z = 0.0
+        t.transform.rotation.z = math.pi / 2
         t.transform.rotation.w = 1.0
         self.static_broadcaster.sendTransform(t)
         self.get_logger().info(f'Broadcasting static transform from {parent_frame} to {child_frame}')
