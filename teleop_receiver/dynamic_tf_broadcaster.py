@@ -47,7 +47,7 @@ class DynamicTransformBroadcaster(Node):
         # Initialize position and orientation
         self.x = 0.0
         self.y = 0.0
-        self.theta = - np.pi / 2
+        self.theta = 0.0  # Adjusted initial orientation
 
         # Initialize wheel speeds
         self.wheel_front_left = 0.0
@@ -111,8 +111,8 @@ class DynamicTransformBroadcaster(Node):
         t.transform.translation.z = 0.0
 
         # Set rotation using quaternion
-        t.transform.rotation.x = math.sin(self.theta / 2.0)
-        t.transform.rotation.y = math.sin(self.theta / 2.0)
+        t.transform.rotation.x = 0.0
+        t.transform.rotation.y = 0.0
         t.transform.rotation.z = math.sin(self.theta / 2.0)
         t.transform.rotation.w = math.cos(self.theta / 2.0)
 
