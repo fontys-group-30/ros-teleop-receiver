@@ -82,7 +82,6 @@ class DynamicTransformBroadcaster(Node):
         except Exception as e:
             self.get_logger().error(f"Failed to read from serial connection: {str(e)}")
 
-
     def broadcast_dynamic_transform(self):
         # Create a TransformStamped message for dynamic transform
         t = TransformStamped()
@@ -106,10 +105,14 @@ class DynamicTransformBroadcaster(Node):
         self.y += delta_y
         self.theta += delta_theta
 
-        # Set translation and rotation
+        # Set translation
         t.transform.translation.x = self.x
         t.transform.translation.y = self.y
         t.transform.translation.z = 0.0
+
+        # Set rotation using quaternion
+        t.transform.rotation.x = math.sin(self.theta / 2.0)
+        t.transform.rotation.y = math.sin(self.theta / 2.0)
         t.transform.rotation.z = math.sin(self.theta / 2.0)
         t.transform.rotation.w = math.cos(self.theta / 2.0)
 
