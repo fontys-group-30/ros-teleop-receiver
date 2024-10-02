@@ -47,7 +47,7 @@ class DynamicTransformBroadcaster(Node):
         # Initialize position and orientation
         self.x = 0.0
         self.y = 0.0
-        self.theta = 0.0  # Adjusted initial orientation
+        self.theta = math.pi / 2.0
 
         # Initialize wheel speeds
         self.wheel_front_left = 0.0
