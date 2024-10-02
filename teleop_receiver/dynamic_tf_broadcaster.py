@@ -13,8 +13,8 @@ def compute_distance_from_odom(wheel_front_left, wheel_front_right, wheel_back_l
     W = 0.15  # Distance from center to side wheels
 
     # Compute velocities in the robot's local frame
-    Vx = (((wheel_front_left + wheel_front_right + wheel_back_left + wheel_back_right)/4)/1440) * (r * 2 * np.pi)
-    Vy = (((-wheel_front_left + wheel_front_right + wheel_back_left - wheel_back_right)/4)/1440) * (r * 2 * np.pi)
+    Vy = (((wheel_front_left + wheel_front_right + wheel_back_left + wheel_back_right)/4)/1440) * (r * 2 * np.pi)
+    Vx = -(((-wheel_front_left + wheel_front_right + wheel_back_left - wheel_back_right)/4)/1440) * (r * 2 * np.pi)
 
     # Compute the angular velocity, accounting for both length (L) and width (W)
     omega = (r / (4 * (L + W))) * ((-wheel_front_left + wheel_front_right - wheel_back_left + wheel_back_right)/4)/1440
