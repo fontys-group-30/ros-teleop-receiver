@@ -1,4 +1,5 @@
 from setuptools import find_packages, setup
+
 package_name = 'teleop-receiver'
 
 setup(
@@ -8,7 +9,7 @@ setup(
     data_files=[
         ('share/ament_index/resource_index/packages', ['resource/' + package_name]),
         ('share/' + package_name, ['package.xml']),
-        ('share/' + package_name + '/launch', ['launch/launch.py']),  # Add this line
+        ('share/' + package_name + '/launch', ['launch/launch.py']),
     ],
     install_requires=['setuptools'],
     zip_safe=True,
@@ -16,7 +17,6 @@ setup(
     maintainer_email='386482@student.fontys.nl',
     description='Node for receiving data from teleop key',
     license='Apache-2.0',
-    tests_require=['pytest'],
     entry_points={
         'console_scripts': [
             'receiver_node = teleop_receiver.receiver_node:main',
