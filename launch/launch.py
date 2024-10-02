@@ -7,6 +7,7 @@ import os
 
 def generate_launch_description():
     slam_toolbox_launch_dir = os.path.join(get_package_share_directory('slam_toolbox'), 'launch')
+    rplidar_ros_launch_dir = os.path.join(get_package_share_directory('rplidar_ros'), 'launch')
 
     return LaunchDescription([
         Node(
@@ -30,5 +31,8 @@ def generate_launch_description():
         IncludeLaunchDescription(
             PythonLaunchDescriptionSource(os.path.join(slam_toolbox_launch_dir, 'online_async_launch.py')),
             launch_arguments={'use_sim_time': 'false'}.items()
+        ),
+        IncludeLaunchDescription(
+            PythonLaunchDescriptionSource(os.path.join(rplidar_ros_launch_dir, 'rplidar.launch.py')),
         ),
     ])
