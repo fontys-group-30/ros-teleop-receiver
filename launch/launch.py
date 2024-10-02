@@ -21,4 +21,11 @@ def generate_launch_description():
             name='receiver_node',
             output='log'
         ),
+        Node(
+            package='slam_toolbox',
+            executable='online_async_launch.py',
+            name='slam_toolbox',
+            output='screen',
+            parameters=[{'use_sim_time': False}]
+        ),
     ])
