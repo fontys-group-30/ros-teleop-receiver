@@ -28,8 +28,8 @@ class StaticTransformBroadcaster(Node):
         t.transform.translation.z = float(z)
         t.transform.rotation.x = 0.0
         t.transform.rotation.y = 0.0
-        t.transform.rotation.z = 1.0
-        t.transform.rotation.w = 0.0
+        t.transform.rotation.z = math.sin(math.pi / 4)
+        t.transform.rotation.w = math.cos(math.pi / 4)
         self.static_broadcaster.sendTransform(t)
         self.get_logger().info(f'Broadcasting static transform from {parent_frame} to {child_frame}')
 
