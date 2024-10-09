@@ -20,7 +20,7 @@ class ReceiverNode(Node):
             return
         self.subscription = self.create_subscription(
             Twist,
-            '/cmd_vel',
+            '/cmd_vel_nav',
             self.receiver_callback,
             10)
 
