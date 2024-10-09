@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 import math
-
 import rclpy
 import tf2_ros
 from geometry_msgs.msg import TransformStamped
@@ -16,11 +15,11 @@ class StaticTransformBroadcaster(Node):
         # Static transform from 'odom' to 'base_footprint'
         self.broadcast_static_transform('odom', 'base_footprint', 0.0, 0.0, 0.0)
 
-        # Static transform from 'base_footprint' to 'laser'
-        self.broadcast_static_transform('base_footprint', 'laser', 0.1, 0.0, 0.15)
-
         # Static transform from 'base_footprint' to 'base_link'
         self.broadcast_static_transform('base_footprint', 'base_link', 0.0, 0.0, 0.0)
+
+        # Static transform from 'base_link' to 'laser'
+        self.broadcast_static_transform('base_link', 'laser', 0.1, 0.0, 0.15)
 
     def broadcast_static_transform(self, parent_frame, child_frame, x, y, z):
         t = TransformStamped()
