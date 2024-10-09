@@ -17,7 +17,7 @@ def compute_distance_from_odom(wheel_front_left, wheel_front_right, wheel_back_l
     Vx = -(((-wheel_front_left + wheel_front_right + wheel_back_left - wheel_back_right)/4)/1440) * (r * 2 * np.pi)
 
     # Compute the angular velocity, accounting for both length (L) and width (W)
-    omega = (r / (4 * (L + W))) * ((-wheel_front_left + wheel_front_right - wheel_back_left + wheel_back_right))/1440
+    omega = (r / (4 * (L + W))) * (-wheel_front_left + wheel_front_right - wheel_back_left + wheel_back_right) / 1440
 
     return Vx, Vy, omega
 
@@ -118,6 +118,28 @@ class DynamicTransformBroadcaster(Node):
 
         # Send the dynamic transform
         self.broadcaster.sendTransform(t)
+
+        # Create a TransformStamped message for base_link
+        t_base_link = TransformStamped()
+
+        # Set the timestamp and frame names
+        t_base_link.header.stamp = self.get_clock().now().to_msg()
+        t_base_link.header.frame_id = 'base_footprint'  # Parent frame
+        t_base_link.child_frame_id = 'base_link'  # Child frame
+
+        # Set translation (assuming base_link is at the same position as base_footprint)
+        t_base_link.transform.translation.x = 0.0
+        t_base_link.transform.translation.y = 0.0
+        t_base_link.transform.translation.z = 0.0
+
+        # Set rotation (assuming no rotation difference between base_footprint and base_link)
+        t_base_link.transform.rotation.x = 0.0
+        t_base_link.transform.rotation.y = 0.0
+        t_base_link.transform.rotation.z = 0.0
+        t_base_link.transform.rotation.w = 1.0
+
+        # Send the dynamic transform for base_link
+        self.broadcaster.sendTransform(t_base_link)
 
 def main():
     # Initialize the ROS2 Python client library
