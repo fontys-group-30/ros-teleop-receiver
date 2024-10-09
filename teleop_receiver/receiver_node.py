@@ -26,7 +26,7 @@ class ReceiverNode(Node):
 
     def receiver_callback(self, msg: Twist):
         # Log the linear and angular velocities
-        self.get_logger().info(f"Received /cmd_vel: Linear: x={msg.linear.x}, y={msg.linear.y}, z={msg.linear.z} | "
+        self.get_logger().info(f"Received /cmd_vel_nav: Linear: x={msg.linear.x}, y={msg.linear.y}, z={msg.linear.z} | "
                                f"Angular: x={msg.angular.x}, y={msg.angular.y}, z={msg.angular.z}")
 
         # Calculate and log wheel velocities

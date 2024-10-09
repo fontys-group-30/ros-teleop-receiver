@@ -28,10 +28,10 @@ def generate_launch_description():
             name='receiver_node',
             output='log'
         ),
-        IncludeLaunchDescription(
-            PythonLaunchDescriptionSource(os.path.join(slam_toolbox_launch_dir, 'online_async_launch.py')),
-            launch_arguments={'use_sim_time': 'false'}.items()
-        ),
+        # IncludeLaunchDescription(
+        #     PythonLaunchDescriptionSource(os.path.join(slam_toolbox_launch_dir, 'online_async_launch.py')),
+        #     launch_arguments={'use_sim_time': 'false'}.items()
+        # ),
         IncludeLaunchDescription(
             PythonLaunchDescriptionSource(os.path.join(rplidar_ros_launch_dir, 'rplidar.launch.py')),
         ),
