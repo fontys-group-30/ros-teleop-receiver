@@ -141,6 +141,26 @@ class DynamicTransformBroadcaster(Node):
         # Send the dynamic transform for base_link
         self.broadcaster.sendTransform(t_base_link)
 
+        t_laser = TransformStamped()
+        # Set the timestamp and frame names
+        t_laser.header.stamp = self.get_clock().now().to_msg()
+        t_laser.header.frame_id = 'base_link'  # Parent frame
+        t_laser.child_frame_id = 'laser'  # Child frame
+
+        # Set translation (assuming base_link is at the same position as base_footprint)
+        t_laser.transform.translation.x = 0.0
+        t_laser.transform.translation.y = 0.0
+        t_laser.transform.translation.z = 0.0
+
+        # Set rotation (assuming no rotation difference between base_footprint and base_link)
+        t_laser.transform.rotation.x = 0.0
+        t_laser.transform.rotation.y = 0.0
+        t_laser.transform.rotation.z = math.sin(-self.theta / 2.0)
+        t_laser.transform.rotation.w = math.cos(-self.theta / 2.0)
+
+        self.broadcaster.sendTransform(t_laser)
+
+
 def main():
     # Initialize the ROS2 Python client library
     rclpy.init()
