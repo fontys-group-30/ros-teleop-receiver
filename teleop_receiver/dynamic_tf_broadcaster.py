@@ -155,8 +155,8 @@ class DynamicTransformBroadcaster(Node):
         # Set rotation (assuming no rotation difference between base_footprint and base_link)
         t_laser.transform.rotation.x = 0.0
         t_laser.transform.rotation.y = 0.0
-        t_laser.transform.rotation.z = math.sin(-self.theta / 2.0)
-        t_laser.transform.rotation.w = math.cos(-self.theta / 2.0)
+        t_laser.transform.rotation.z = math.sin(math.pi / 2 - (self.theta / 2.0))
+        t_laser.transform.rotation.w = math.cos(math.pi / 2 - (self.theta / 2.0))
 
         self.broadcaster.sendTransform(t_laser)
 
