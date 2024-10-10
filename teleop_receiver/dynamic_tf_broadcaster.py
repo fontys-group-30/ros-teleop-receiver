@@ -13,8 +13,8 @@ def compute_distance_from_odom(wheel_front_left, wheel_front_right, wheel_back_l
     W = 0.15  # Distance from center to side wheels
 
     # Compute velocities in the robot's local frame
-    Vy = (((wheel_front_left + wheel_front_right + wheel_back_left + wheel_back_right)/4)/1440) * (r * 2 * np.pi)
-    Vx = -(((-wheel_front_left + wheel_front_right + wheel_back_left - wheel_back_right)/4)/1440) * (r * 2 * np.pi)
+    Vx = (((wheel_front_left + wheel_front_right + wheel_back_left + wheel_back_right)/4)/1440) * (r * 2 * np.pi)
+    Vy = (((-wheel_front_left + wheel_front_right + wheel_back_left - wheel_back_right)/4)/1440) * (r * 2 * np.pi)
 
     # Compute the angular velocity, accounting for both length (L) and width (W)
     omega = (r / (4 * (L + W))) * (-wheel_front_left + wheel_front_right - wheel_back_left + wheel_back_right) / 1440
@@ -66,31 +66,7 @@ class DynamicTransformBroadcaster(Node):
         except Exception as e:
             self.get_logger().error('Failed to establish connection: ' + str(e))
 
-    def update(self):
-        # Update transform
-        self.broadcast_dynamic_transform()
-
-        try:
-            if self.serial_connection.in_waiting > 0:
-                serial_data = self.serial_connection.readline().decode('utf-8').strip()
-                self.get_logger().info(f"Received serial data: {serial_data}")
-
-                if serial_data.startswith("OUT: "):
-                    wheel_speeds = serial_data[4:].split(',')
-                    self.wheel_front_left, self.wheel_front_right, self.wheel_back_left, self.wheel_back_right = map(float, wheel_speeds)
-
-        except Exception as e:
-            self.get_logger().error(f"Failed to read from serial connection: {str(e)}")
-
-    def broadcast_dynamic_transform(self):
-        # Create a TransformStamped message for dynamic transform
-        t = TransformStamped()
-
-        # Set the timestamp and frame names
-        t.header.stamp = self.get_clock().now().to_msg()
-        t.header.frame_id = 'odom'  # Parent frame
-        t.child_frame_id = 'base_footprint'  # Child frame
-
+    def update_position(self):
         # Compute the new position and orientation
         delta_x, delta_y, delta_theta = compute_transformations(
             (self.x, self.y, self.theta),
@@ -105,60 +81,47 @@ class DynamicTransformBroadcaster(Node):
         self.y += delta_y
         self.theta += delta_theta
 
+    def update(self):
+        self.update_position()
+        # Update transform
+        self.broadcast_dynamic_transform('odom', 'base_footprint', self.x, self.y, self.theta)
+        self.broadcast_dynamic_transform('base_footprint', 'base_link', 0.0, 0.0, 0.0)
+        self.broadcast_dynamic_transform('base_link', 'laser', 0.0, 0.0, math.pi / 2 - self.theta)
+
+        try:
+            if self.serial_connection.in_waiting > 0:
+                serial_data = self.serial_connection.readline().decode('utf-8').strip()
+                self.get_logger().info(f"Received serial data: {serial_data}")
+
+                if serial_data.startswith("OUT: "):
+                    wheel_speeds = serial_data[4:].split(',')
+                    self.wheel_front_left, self.wheel_front_right, self.wheel_back_left, self.wheel_back_right = map(float, wheel_speeds)
+
+        except Exception as e:
+            self.get_logger().error(f"Failed to read from serial connection: {str(e)}")
+
+    def broadcast_dynamic_transform(self, parent_frame, child_frame, x, y, theta):
+        # Create a TransformStamped message for dynamic transform
+        t = TransformStamped()
+
+        # Set the timestamp and frame names
+        t.header.stamp = self.get_clock().now().to_msg()
+        t.header.frame_id = parent_frame  # Parent frame
+        t.child_frame_id = child_frame  # Child frame
+
         # Set translation
-        t.transform.translation.x = self.x
-        t.transform.translation.y = self.y
+        t.transform.translation.x = float(x)
+        t.transform.translation.y = float(y)
         t.transform.translation.z = 0.0
 
         # Set rotation using quaternion
         t.transform.rotation.x = 0.0
         t.transform.rotation.y = 0.0
-        t.transform.rotation.z = math.sin(self.theta / 2.0)
-        t.transform.rotation.w = math.cos(self.theta / 2.0)
+        t.transform.rotation.z = math.sin(theta / 2.0)
+        t.transform.rotation.w = math.cos(theta / 2.0)
 
         # Send the dynamic transform
         self.broadcaster.sendTransform(t)
-
-        # Create a TransformStamped message for base_link
-        t_base_link = TransformStamped()
-
-        # Set the timestamp and frame names
-        t_base_link.header.stamp = self.get_clock().now().to_msg()
-        t_base_link.header.frame_id = 'base_footprint'  # Parent frame
-        t_base_link.child_frame_id = 'base_link'  # Child frame
-
-        # Set translation (assuming base_link is at the same position as base_footprint)
-        t_base_link.transform.translation.x = 0.0
-        t_base_link.transform.translation.y = 0.0
-        t_base_link.transform.translation.z = 0.0
-
-        # Set rotation (assuming no rotation difference between base_footprint and base_link)
-        t_base_link.transform.rotation.x = 0.0
-        t_base_link.transform.rotation.y = 0.0
-        t_base_link.transform.rotation.z = 0.0
-        t_base_link.transform.rotation.w = 1.0
-
-        # Send the dynamic transform for base_link
-        self.broadcaster.sendTransform(t_base_link)
-
-        t_laser = TransformStamped()
-        # Set the timestamp and frame names
-        t_laser.header.stamp = self.get_clock().now().to_msg()
-        t_laser.header.frame_id = 'base_link'  # Parent frame
-        t_laser.child_frame_id = 'laser'  # Child frame
-
-        # Set translation (assuming base_link is at the same position as base_footprint)
-        t_laser.transform.translation.x = 0.0
-        t_laser.transform.translation.y = 0.0
-        t_laser.transform.translation.z = 0.0
-
-        # Set rotation (assuming no rotation difference between base_footprint and base_link)
-        t_laser.transform.rotation.x = 0.0
-        t_laser.transform.rotation.y = 0.0
-        t_laser.transform.rotation.z = math.sin(math.pi / 4 - (self.theta / 2.0))
-        t_laser.transform.rotation.w = math.cos(math.pi / 4 - (self.theta / 2.0))
-
-        self.broadcaster.sendTransform(t_laser)
 
 
 def main():
