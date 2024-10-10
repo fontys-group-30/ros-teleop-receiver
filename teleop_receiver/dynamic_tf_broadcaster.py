@@ -13,22 +13,22 @@ def compute_distance_from_odom(wheel_front_left, wheel_front_right, wheel_back_l
     W = 0.15  # Distance from center to side wheels
 
     # Compute velocities in the robot's local frame
-    Vx = (((wheel_front_left + wheel_front_right + wheel_back_left + wheel_back_right)/4)/1440) * (r * 2 * np.pi)
-    Vy = (((-wheel_front_left + wheel_front_right + wheel_back_left - wheel_back_right)/4)/1440) * (r * 2 * np.pi)
+    x = (((wheel_front_left + wheel_front_right + wheel_back_left + wheel_back_right)/4)/1440) * (r * 2 * np.pi)
+    y = (((-wheel_front_left + wheel_front_right + wheel_back_left - wheel_back_right)/4)/1440) * (r * 2 * np.pi)
 
     # Compute the angular velocity, accounting for both length (L) and width (W)
-    omega = (r / (4 * (L + W))) * (-wheel_front_left + wheel_front_right - wheel_back_left + wheel_back_right) / 1440
+    theta = (r / (4 * (L + W))) * (-wheel_front_left + wheel_front_right - wheel_back_left + wheel_back_right) / 1440
 
-    return Vx, Vy, omega
+    return x, y, theta
 
 
 def compute_transformations(old_position, wheel_front_left, wheel_front_right, wheel_back_left, wheel_back_right):
-    x, y, omega = compute_distance_from_odom(wheel_front_left, wheel_front_right, wheel_back_left, wheel_back_right)
-    tx = x - old_position[0]
-    ty = y - old_position[1]
-    tomega = omega - old_position[2]
+    x, y, theta = compute_distance_from_odom(wheel_front_left, wheel_front_right, wheel_back_left, wheel_back_right)
+    delta_x = x - old_position[0]
+    delta_y = y - old_position[1]
+    delta_theta = theta - old_position[2]
 
-    return tx, ty, tomega
+    return delta_x, delta_y, delta_theta
 
 
 class DynamicTransformBroadcaster(Node):
@@ -82,10 +82,16 @@ class DynamicTransformBroadcaster(Node):
         self.theta += delta_theta
 
     def update(self):
+        # Update position
         self.update_position()
-        # Update transform
+        
+        # Dynamic transform from 'odom' to 'base_footprint'
         self.broadcast_dynamic_transform('odom', 'base_footprint', self.x, self.y, self.theta)
+
+        # Dynamic transform from 'base_footprint' to 'base_link'
         self.broadcast_dynamic_transform('base_footprint', 'base_link', 0.0, 0.0, 0.0)
+        
+        # Dynamic transform from 'base_link' to 'laser'
         self.broadcast_dynamic_transform('base_link', 'laser', 0.0, 0.0, math.pi / 2 - self.theta)
 
         try:
