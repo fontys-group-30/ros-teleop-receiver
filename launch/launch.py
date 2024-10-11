@@ -16,12 +16,12 @@ def generate_launch_description():
         #     name='dynamic_tf_broadcaster',
         #     output='log'
         # ),
-        Node(
-            package='teleop-receiver',
-            executable='static_tf_broadcaster',
-            name='static_tf_broadcaster',
-            output='log'
-        ),
+        # Node(
+        #     package='teleop-receiver',
+        #     executable='static_tf_broadcaster',
+        #     name='static_tf_broadcaster',
+        #     output='log'
+        # ),
         Node(
             package='teleop-receiver',
             executable='receiver_node',
