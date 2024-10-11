@@ -6,16 +6,16 @@ from ament_index_python.packages import get_package_share_directory
 import os
 
 def generate_launch_description():
-    slam_toolbox_launch_dir = os.path.join(get_package_share_directory('slam_toolbox'), 'launch')
+    # slam_toolbox_launch_dir = os.path.join(get_package_share_directory('slam_toolbox'), 'launch')
     rplidar_ros_launch_dir = os.path.join(get_package_share_directory('rplidar_ros'), 'launch')
 
     return LaunchDescription([
-        Node(
-            package='teleop-receiver',
-            executable='dynamic_tf_broadcaster',
-            name='dynamic_tf_broadcaster',
-            output='log'
-        ),
+        # Node(
+        #     package='teleop-receiver',
+        #     executable='dynamic_tf_broadcaster',
+        #     name='dynamic_tf_broadcaster',
+        #     output='log'
+        # ),
         Node(
             package='teleop-receiver',
             executable='static_tf_broadcaster',
