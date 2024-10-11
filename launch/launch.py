@@ -10,18 +10,18 @@ def generate_launch_description():
     rplidar_ros_launch_dir = os.path.join(get_package_share_directory('rplidar_ros'), 'launch')
 
     return LaunchDescription([
-        # Node(
-        #     package='teleop-receiver',
-        #     executable='dynamic_tf_broadcaster',
-        #     name='dynamic_tf_broadcaster',
-        #     output='log'
-        # ),
-        # Node(
-        #     package='teleop-receiver',
-        #     executable='static_tf_broadcaster',
-        #     name='static_tf_broadcaster',
-        #     output='log'
-        # ),
+        Node(
+            package='teleop-receiver',
+            executable='dynamic_tf_broadcaster',
+            name='dynamic_tf_broadcaster',
+            output='log'
+        ),
+        Node(
+            package='teleop-receiver',
+            executable='static_tf_broadcaster',
+            name='static_tf_broadcaster',
+            output='log'
+        ),
         Node(
             package='teleop-receiver',
             executable='receiver_node',
