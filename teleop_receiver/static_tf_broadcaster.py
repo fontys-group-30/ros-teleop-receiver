@@ -19,7 +19,7 @@ class StaticTransformBroadcaster(Node):
         self.broadcast_static_transform('base_footprint', 'base_link', 0.0, 0.0, 0.0, 0.0)
 
         # Static transform from 'base_link' to 'laser'
-        # self.broadcast_static_transform('base_link', 'laser', 0.1, 0.0, 0.15, math.pi / 2)
+        self.broadcast_static_transform('base_link', 'laser', 0.1, 0.0, 0.15, math.pi / 2)
 
     def broadcast_static_transform(self, parent_frame, child_frame, x, y, z, theta):
         t = TransformStamped()
