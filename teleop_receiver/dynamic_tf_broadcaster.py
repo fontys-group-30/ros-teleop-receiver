@@ -17,7 +17,7 @@ def compute_distance_from_odom(wheel_front_left, wheel_front_right, wheel_back_l
     y = (((-wheel_front_left + wheel_front_right + wheel_back_left - wheel_back_right)/4)/1440) * (r * 2 * np.pi)
 
     # Compute the angular velocity, accounting for both length (L) and width (W)
-    theta = (r / (4 * (L + W))) * (-wheel_front_left + wheel_front_right - wheel_back_left + wheel_back_right) / 1440
+    theta = 3*(r / (4 * (L + W))) * (-wheel_front_left + wheel_front_right - wheel_back_left + wheel_back_right) / 1440
 
     return x, y, theta
 
