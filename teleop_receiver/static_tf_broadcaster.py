@@ -19,9 +19,9 @@ class StaticTransformBroadcaster(Node):
         self.broadcast_static_transform('base_footprint', 'base_link', 0.0, 0.0, 0.0, 0.0)
 
         # Static transform from 'base_link' to 'laser'
-        self.broadcast_static_transform('base_link', 'laser', 0.1, 0.0, 0.15, math.pi / 2)
+        self.broadcast_static_transform('base_link', 'laser', 0.1, 0.0, 0.15, math.pi / 2, math.pi)
 
-    def broadcast_static_transform(self, parent_frame, child_frame, x, y, z, theta):
+    def broadcast_static_transform(self, parent_frame, child_frame, x, y, z, theta, x2=0.0):
         t = TransformStamped()
         t.header.stamp = self.get_clock().now().to_msg()
         t.header.frame_id = parent_frame
@@ -29,7 +29,7 @@ class StaticTransformBroadcaster(Node):
         t.transform.translation.x = float(x)
         t.transform.translation.y = float(y)
         t.transform.translation.z = float(z)
-        t.transform.rotation.x = 0.0
+        t.transform.rotation.x = x2
         t.transform.rotation.y = 0.0
         t.transform.rotation.z = math.sin(theta / 2)
         t.transform.rotation.w = math.cos(theta / 2)
