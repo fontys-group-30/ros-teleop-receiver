@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import math
 import rclpy
+import tf2_ros
 from geometry_msgs.msg import TransformStamped
 from rclpy.node import Node
 from tf2_ros.static_transform_broadcaster import StaticTransformBroadcaster
@@ -9,10 +10,7 @@ from tf2_ros.static_transform_broadcaster import StaticTransformBroadcaster
 class StaticTransformBroadcaster(Node):
     def __init__(self):
         super().__init__('static_tf_broadcaster')
-        self.static_broadcaster = StaticTransformBroadcaster(self)
-
-        # Static transform from 'map' to 'odom'
-        self.broadcast_static_transform('map', 'odom', 0.0, 0.0, 0.0, 0.0)
+        self.static_broadcaster = tf2_ros.StaticTransformBroadcaster(self)
 
         # Static transform from 'odom' to 'base_footprint'
         self.broadcast_static_transform('odom', 'base_footprint', 0.0, 0.0, 0.0, 0.0)
