@@ -81,6 +81,8 @@ class DynamicTransformBroadcaster(Node):
         self.y += delta_y
         self.theta += delta_theta
 
+        self.get_logger().info(f"Theta: {self.theta}")
+
     def update(self):
         # Update position
         self.update_position()
@@ -97,7 +99,6 @@ class DynamicTransformBroadcaster(Node):
         try:
             if self.serial_connection.in_waiting > 0:
                 serial_data = self.serial_connection.readline().decode('utf-8').strip()
-                self.get_logger().info(f"Received serial data: {serial_data}")
 
                 if serial_data.startswith("OUT: "):
                     wheel_speeds = serial_data[4:].split(',')
