@@ -60,8 +60,7 @@ class DynamicTransformBroadcaster(Node):
 
     def setup_serial(self):
         try:
-            self.serial_connection = serial.Serial(self.get_parameter('serial_port').value,
-                                                   self.get_parameter('baud_rate').value, timeout=1)
+            self.serial_connection = serial.Serial(self.get_parameter('serial_port').value, self.get_parameter('baud_rate').value, timeout=1)
             self.get_logger().info('Serial Connection Established')
         except Exception as e:
             self.get_logger().error('Failed to establish connection: ' + str(e))
@@ -81,7 +80,7 @@ class DynamicTransformBroadcaster(Node):
         self.y += delta_y
         self.theta += delta_theta
 
-        self.get_logger().info(f"Theta: {self.theta}")
+        self.get_logger().info(f"Theta: {self.theta}, Encoder Left Front {self.wheel_front_left}, Encoder Right Front {self.wheel_front_right}, Encoder Left Back {self.wheel_back_left}, Encoder Right Back {self.wheel_back_right}")
 
     def update(self):
         # Update position
