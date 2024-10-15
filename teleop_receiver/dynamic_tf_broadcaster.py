@@ -93,7 +93,7 @@ class DynamicTransformBroadcaster(Node):
         self.broadcast_dynamic_transform('base_footprint', 'base_link', 0.0, 0.0, 0.0)
         
         # Dynamic transform from 'base_link' to 'laser'
-        self.broadcast_dynamic_transform('base_link', 'laser', 0.0, 0.0, 0.0)
+        self.broadcast_dynamic_transform('base_link', 'laser', 0.0, 0.0, math.pi / 4)
 
         try:
             if self.serial_connection.in_waiting > 0:
