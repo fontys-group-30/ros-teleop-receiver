@@ -123,8 +123,8 @@ class DynamicTransformBroadcaster(Node):
         # Set rotation using quaternion
         t.transform.rotation.x = 0.0
         t.transform.rotation.y = 0.0
-        t.transform.rotation.z = math.sin(theta / 2.0)
-        t.transform.rotation.w = math.cos(theta / 2.0)
+        t.transform.rotation.z = math.sin(theta)
+        t.transform.rotation.w = math.cos(theta)
 
         # Send the dynamic transform
         self.broadcaster.sendTransform(t)
