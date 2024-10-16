@@ -67,7 +67,7 @@ class DynamicTransformBroadcaster(Node):
 
     def update_position(self):
         # Compute the new position and orientation
-        delta_x, delta_y, delta_theta = compute_transformations(
+        delta_local_x, delta_local_y, delta_theta = compute_transformations(
             (self.x, self.y, self.theta),
             self.wheel_front_left,
             self.wheel_front_right,
@@ -76,9 +76,22 @@ class DynamicTransformBroadcaster(Node):
         )
 
         # Update the current position and orientation
-        self.x += delta_x
-        self.y += delta_y
-        self.theta += delta_theta
+        self.theta = np.mod(self.theta + delta_theta, 2 * np. pi)
+        delta_global_x = delta_x * math.cos(self.theta) - delta_y * math.sin(self.theta)
+        delta_global_y = delta_x * math.sin(self.theta) + delta_y * math.cos(self.theta)
+        if self.theta>=0 and self.theta< np.pi/4:
+            self.x += delta_global_x
+            self.y += delta_global_y
+        if self.theta>=np.pi/4 and self.theta<np.pi/2
+            self.x += delta_global_y
+            self.y += -delta_global_x
+        if theta.theta>=np.pi/2 and self.theta<np.pi*3/4
+            self.x += -delta_global_x
+            self.y += -delta_global_y
+        if self.theta>=np.pi*3/4 and self.theta<np.pi*2
+            self.x += -delta_global_y
+            self.y += delta_global_x
+        
 
         self.get_logger().info(f"Theta: {self.theta}, Encoder Left Front {self.wheel_front_left}, Encoder Right Front {self.wheel_front_right}, Encoder Left Back {self.wheel_back_left}, Encoder Right Back {self.wheel_back_right}")
 
