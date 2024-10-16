@@ -84,11 +84,18 @@ class DynamicTransformBroadcaster(Node):
         qz = math.sin(self.theta / 2)
         qw = math.cos(self.theta / 2)
 
+        # Normalize the quaternion
+        norm = math.sqrt(qx ** 2 + qy ** 2 + qz ** 2 + qw ** 2)
+        qx /= norm
+        qy /= norm
+        qz /= norm
+        qw /= norm
+
         # Convert quaternion to rotation matrix
         rotation_matrix = np.array([
-            [1 - 2*qy**2 - 2*qz**2, 2*qx*qy - 2*qz*qw, 2*qx*qz + 2*qy*qw],
-            [2*qx*qy + 2*qz*qw, 1 - 2*qx**2 - 2*qz**2, 2*qy*qz - 2*qx*qw],
-            [2*qx*qz - 2*qy*qw, 2*qy*qz + 2*qx*qw, 1 - 2*qx**2 - 2*qy**2]
+            [1 - 2 * qy ** 2 - 2 * qz ** 2, 2 * qx * qy - 2 * qz * qw, 2 * qx * qz + 2 * qy * qw],
+            [2 * qx * qy + 2 * qz * qw, 1 - 2 * qx ** 2 - 2 * qz ** 2, 2 * qy * qz - 2 * qx * qw],
+            [2 * qx * qz - 2 * qy * qw, 2 * qy * qz + 2 * qx * qw, 1 - 2 * qx ** 2 - 2 * qy ** 2]
         ])
 
         # Apply rotation matrix to local deltas
