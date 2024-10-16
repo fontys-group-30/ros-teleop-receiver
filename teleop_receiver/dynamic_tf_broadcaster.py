@@ -95,6 +95,12 @@ class DynamicTransformBroadcaster(Node):
         # Dynamic transform from 'base_link' to 'laser'
         self.broadcast_dynamic_transform('base_link', 'laser', 0.0, 0.0, math.pi / 4)
 
+        # Dynamic transform for each wheel
+        # self.broadcast_dynamic_transform('base_link', 'left_front_wheel', 0.0475, 0.13, self.wheel_front_left)
+        # self.broadcast_dynamic_transform('base_link', 'right_front_wheel', 0.0475, -0.13, self.wheel_front_right)
+        # self.broadcast_dynamic_transform('base_link', 'left_back_wheel', -0.0475, 0.13, self.wheel_back_left)
+        # self.broadcast_dynamic_transform('base_link', 'right_back_wheel', -0.0475, -0.13, self.wheel_back_right)
+
         try:
             if self.serial_connection.in_waiting > 0:
                 serial_data = self.serial_connection.readline().decode('utf-8').strip()
