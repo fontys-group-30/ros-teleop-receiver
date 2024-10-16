@@ -67,23 +67,26 @@ class DynamicTransformBroadcaster(Node):
         )
 
         # Update the current position and orientation
-        self.theta = np.mod(self.theta + vel_theta * delta_t, 2 * np.pi)
-        delta_x = (vel_x * math.cos(self.theta) - vel_y * math.sin(self.theta)) * delta_t
-        delta_y = (vel_x * math.sin(self.theta) + vel_y * math.cos(self.theta)) * delta_t
+        self.theta += vel_theta * delta_t
+        self.x += vel_x * delta_t
+        self.y += vel_y * delta_t
+        # self.theta = np.mod(self.theta + vel_theta * delta_t, 2 * np.pi)
+        # delta_x = (vel_x * math.cos(self.theta) - vel_y * math.sin(self.theta)) * delta_t
+        # delta_y = (vel_x * math.sin(self.theta) + vel_y * math.cos(self.theta)) * delta_t
 
-        if 0 <= self.theta < np.pi/4:
-            self.x += delta_x
-            self.y += delta_y
-        elif np.pi/4 <= self.theta < np.pi/2:
-            self.x += -delta_y
-            self.y += delta_x
-        elif np.pi/2 <= self.theta < np.pi*3/4:
-            self.x += -delta_x
-            self.y += -delta_y
-        else:
-            self.x += delta_y
-            self.y += -delta_x
-
+        # if 0 <= self.theta < np.pi/4:
+        #     self.x += delta_x
+        #     self.y += delta_y
+        # elif np.pi/4 <= self.theta < np.pi/2:
+        #     self.x += -delta_y
+        #     self.y += delta_x
+        # elif np.pi/2 <= self.theta < np.pi*3/4:
+        #     self.x += -delta_x
+        #     self.y += -delta_y
+        # else:
+        #     self.x += delta_y
+        #     self.y += -delta_x
+        #
 
         self.get_logger().info(f"Theta: {self.theta}, Encoder Left Front {self.wheel_front_left}, Encoder Right Front {self.wheel_front_right}, Encoder Left Back {self.wheel_back_left}, Encoder Right Back {self.wheel_back_right}")
 
