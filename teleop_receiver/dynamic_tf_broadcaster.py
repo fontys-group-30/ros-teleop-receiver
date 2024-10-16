@@ -78,21 +78,26 @@ class DynamicTransformBroadcaster(Node):
         # Update the current position and orientation
         self.theta = np.mod(self.theta + delta_theta, 2 * np.pi)
 
-        delta_global_x = delta_local_x * math.cos(self.theta) - delta_local_y * math.sin(self.theta)
-        delta_global_y = delta_local_x * math.sin(self.theta) + delta_local_y * math.cos(self.theta)
+        # Convert theta to quaternion
+        qx = 0.0
+        qy = 0.0
+        qz = math.sin(self.theta / 2)
+        qw = math.cos(self.theta / 2)
 
-        if 0 <= self.theta < np.pi/4:
-            self.x += delta_global_x
-            self.y += delta_global_y
-        if np.pi/4 <= self.theta < np.pi/2:
-            self.x += delta_global_y
-            self.y += -delta_global_x
-        if np.pi/2 <= self.theta < np.pi*3/4:
-            self.x += -delta_global_x
-            self.y += -delta_global_y
-        if np.pi*3/4 <= self.theta < np.pi*2:
-            self.x += -delta_global_y
-            self.y += delta_global_x
+        # Convert quaternion to rotation matrix
+        rotation_matrix = np.array([
+            [1 - 2*qy**2 - 2*qz**2, 2*qx*qy - 2*qz*qw, 2*qx*qz + 2*qy*qw],
+            [2*qx*qy + 2*qz*qw, 1 - 2*qx**2 - 2*qz**2, 2*qy*qz - 2*qx*qw],
+            [2*qx*qz - 2*qy*qw, 2*qy*qz + 2*qx*qw, 1 - 2*qx**2 - 2*qy**2]
+        ])
+
+        # Apply rotation matrix to local deltas
+        delta_local = np.array([delta_local_x, delta_local_y, 0.0])
+        delta_global = rotation_matrix.dot(delta_local)
+
+        # Update the current position
+        self.x += delta_global[0]
+        self.y += delta_global[1]
         
 
         self.get_logger().info(f"Theta: {self.theta}, Encoder Left Front {self.wheel_front_left}, Encoder Right Front {self.wheel_front_right}, Encoder Left Back {self.wheel_back_left}, Encoder Right Back {self.wheel_back_right}")
