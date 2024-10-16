@@ -12,47 +12,23 @@ def compute_distance_from_odom(wheel_front_left, wheel_front_right, wheel_back_l
     L = 0.08  # Distance from center to front/back wheels
     W = 0.15  # Distance from center to side wheels
 
-    # Compute velocities in the robot's local frame for each quadrant
-    x_q1 = (((wheel_front_left + wheel_front_right + wheel_back_left + wheel_back_right)/4)/1440) * (r * 2 * np.pi)
-    y_q1 = (((-wheel_front_left + wheel_front_right + wheel_back_left - wheel_back_right)/4)/1440) * (r * 2 * np.pi)
-    theta_q1 = 2.98*(r / (4 * (L + W))) * (-wheel_front_left + wheel_front_right - wheel_back_left + wheel_back_right) / 1440
+    # Compute velocities in the robot's local frame
+    x = (((wheel_front_left + wheel_front_right + wheel_back_left + wheel_back_right)/4)/1440) * (r * 2 * np.pi)
+    y = (((-wheel_front_left + wheel_front_right + wheel_back_left - wheel_back_right)/4)/1440) * (r * 2 * np.pi)
 
-    x_q2 = (((wheel_front_left + wheel_front_right + wheel_back_left + wheel_back_right)/4)/1440) * (r * 2 * np.pi)
-    y_q2 = (((-wheel_front_left + wheel_front_right + wheel_back_left - wheel_back_right)/4)/1440) * (r * 2 * np.pi)
-    theta_q2 = 2.98*(r / (4 * (L + W))) * (-wheel_front_left + wheel_front_right - wheel_back_left + wheel_back_right) / 1440
+    # Compute the angular velocity, accounting for both length (L) and width (W)
+    theta = 2.98*(r / (4 * (L + W))) * (-wheel_front_left + wheel_front_right - wheel_back_left + wheel_back_right) / 1440
 
-    x_q3 = (((wheel_front_left + wheel_front_right + wheel_back_left + wheel_back_right)/4)/1440) * (r * 2 * np.pi)
-    y_q3 = (((-wheel_front_left + wheel_front_right + wheel_back_left - wheel_back_right)/4)/1440) * (r * 2 * np.pi)
-    theta_q3 = 2.98*(r / (4 * (L + W))) * (-wheel_front_left + wheel_front_right - wheel_back_left + wheel_back_right) / 1440
-
-    x_q4 = (((wheel_front_left + wheel_front_right + wheel_back_left + wheel_back_right)/4)/1440) * (r * 2 * np.pi)
-    y_q4 = (((-wheel_front_left + wheel_front_right + wheel_back_left - wheel_back_right)/4)/1440) * (r * 2 * np.pi)
-    theta_q4 = 2.98*(r / (4 * (L + W))) * (-wheel_front_left + wheel_front_right - wheel_back_left + wheel_back_right) / 1440
-
-    return (x_q1, y_q1, theta_q1), (x_q2, y_q2, theta_q2), (x_q3, y_q3, theta_q3), (x_q4, y_q4, theta_q4)
+    return x, y, theta
 
 
 def compute_transformations(old_position, wheel_front_left, wheel_front_right, wheel_back_left, wheel_back_right):
-    (x_q1, y_q1, theta_q1), (x_q2, y_q2, theta_q2), (x_q3, y_q3, theta_q3), (x_q4, y_q4, theta_q4) = compute_distance_from_odom(
-        wheel_front_left, wheel_front_right, wheel_back_left, wheel_back_right)
+    x, y, theta = compute_distance_from_odom(wheel_front_left, wheel_front_right, wheel_back_left, wheel_back_right)
+    delta_x = x - old_position[0]
+    delta_y = y - old_position[1]
+    delta_theta = theta - old_position[2]
 
-    delta_x_q1 = x_q1 - old_position[0]
-    delta_y_q1 = y_q1 - old_position[1]
-    delta_theta_q1 = theta_q1 - old_position[2]
-
-    delta_x_q2 = x_q2 - old_position[0]
-    delta_y_q2 = y_q2 - old_position[1]
-    delta_theta_q2 = theta_q2 - old_position[2]
-
-    delta_x_q3 = x_q3 - old_position[0]
-    delta_y_q3 = y_q3 - old_position[1]
-    delta_theta_q3 = theta_q3 - old_position[2]
-
-    delta_x_q4 = x_q4 - old_position[0]
-    delta_y_q4 = y_q4 - old_position[1]
-    delta_theta_q4 = theta_q4 - old_position[2]
-
-    return (delta_x_q1, delta_y_q1, delta_theta_q1), (delta_x_q2, delta_y_q2, delta_theta_q2), (delta_x_q3, delta_y_q3, delta_theta_q3), (delta_x_q4, delta_y_q4, delta_theta_q4)
+    return delta_x, delta_y, delta_theta
 
 
 class DynamicTransformBroadcaster(Node):
@@ -100,11 +76,14 @@ class DynamicTransformBroadcaster(Node):
         )
 
         # Update the current position and orientation
-        self.x += delta_x * math.cos(self.theta) - delta_y * math.sin(self.theta)
-        self.y += delta_x * math.sin(self.theta) + delta_y * math.cos(self.theta)
+        self.x += delta_x
+        self.y += delta_y
         self.theta += delta_theta
 
-        self.get_logger().info(f"Theta: {self.theta}, Encoder Left Front {self.wheel_front_left}, Encoder Right Front {self.wheel_front_right}, Encoder Left Back {self.wheel_back_left}, Encoder Right Back {self.wheel_back_right}")
+        # Normalize theta to be within [-pi, pi]
+        self.theta = (self.theta + math.pi) % (2 * math.pi) - math.pi
+
+        self.get_logger().info(f"X: {self.x}, Y: {self.y}, Theta: {self.theta}")
 
     def update(self):
         # Update position
@@ -150,11 +129,13 @@ class DynamicTransformBroadcaster(Node):
         t.transform.translation.y = float(y)
         t.transform.translation.z = 0.0
 
-        # Set rotation using quaternion
+        # Set rotation using quaternion (ensure all quadrants are handled)
+        qz = math.sin(theta / 2.0)
+        qw = math.cos(theta / 2.0)
         t.transform.rotation.x = 0.0
         t.transform.rotation.y = 0.0
-        t.transform.rotation.z = math.sin(theta)
-        t.transform.rotation.w = math.cos(theta)
+        t.transform.rotation.z = qz
+        t.transform.rotation.w = qw
 
         # Send the dynamic transform
         self.broadcaster.sendTransform(t)
