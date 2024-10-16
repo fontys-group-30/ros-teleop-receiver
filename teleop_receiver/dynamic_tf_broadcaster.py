@@ -85,7 +85,7 @@ class DynamicTransformBroadcaster(Node):
         if self.theta>=np.pi/4 and self.theta<np.pi/2
             self.x += delta_global_y
             self.y += -delta_global_x
-        if theta.theta>=np.pi/2 and self.theta<np.pi*3/4
+        if self.theta>=np.pi/2 and self.theta<np.pi*3/4
             self.x += -delta_global_x
             self.y += -delta_global_y
         if self.theta>=np.pi*3/4 and self.theta<np.pi*2
