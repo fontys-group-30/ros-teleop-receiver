@@ -80,10 +80,7 @@ class DynamicTransformBroadcaster(Node):
         self.y += delta_y
         self.theta += delta_theta
 
-        # Normalize theta to be within [-pi, pi]
-        self.theta = (self.theta + math.pi) % (2 * math.pi) - math.pi
-
-        self.get_logger().info(f"X: {self.x}, Y: {self.y}, Theta: {self.theta}")
+        self.get_logger().info(f"Theta: {self.theta}, Encoder Left Front {self.wheel_front_left}, Encoder Right Front {self.wheel_front_right}, Encoder Left Back {self.wheel_back_left}, Encoder Right Back {self.wheel_back_right}")
 
     def update(self):
         # Update position
@@ -129,13 +126,11 @@ class DynamicTransformBroadcaster(Node):
         t.transform.translation.y = float(y)
         t.transform.translation.z = 0.0
 
-        # Set rotation using quaternion (ensure all quadrants are handled)
-        qz = math.sin(theta / 2.0)
-        qw = math.cos(theta / 2.0)
+        # Set rotation using quaternion
         t.transform.rotation.x = 0.0
         t.transform.rotation.y = 0.0
-        t.transform.rotation.z = qz
-        t.transform.rotation.w = qw
+        t.transform.rotation.z = math.sin(theta)
+        t.transform.rotation.w = math.cos(theta)
 
         # Send the dynamic transform
         self.broadcaster.sendTransform(t)
