@@ -77,21 +77,25 @@ class DynamicTransformBroadcaster(Node):
 
         # Update theta
         self.theta += delta_theta
-        self.theta = np.arctan2(np.sin(self.theta), np.cos(self.theta))  # Normalize theta
+
+        # Normalize theta to the range [0, 2π]
+        self.theta = self.theta % (2 * np.pi)
+
+        # Ensure it's in the range [-π, π]
+        if self.theta > np.pi:
+            self.theta -= 2 * np.pi
 
         # Calculate global position changes
-        delta_global_x = delta_local_x * math.cos(self.theta) - delta_local_y * math.sin(self.theta)
-        delta_global_y = delta_local_x * math.sin(self.theta) + delta_local_y * math.cos(self.theta)
+        delta_global_x = (delta_local_x * math.cos(self.theta)) - (delta_local_y * math.sin(self.theta))
+        delta_global_y = (delta_local_x * math.sin(self.theta)) + (delta_local_y * math.cos(self.theta))
 
         # Update the position
         self.x += delta_global_x
         self.y += delta_global_y
 
-        self.get_logger().info(f"Theta: {self.theta}, Position: ({self.x}, {self.y}), "
-                               f"Encoder Left Front: {self.wheel_front_left}, "
-                               f"Encoder Right Front: {self.wheel_front_right}, "
-                               f"Encoder Left Back: {self.wheel_back_left}, "
-                               f"Encoder Right Back: {self.wheel_back_right}")
+        # Log the updated state for debugging
+        self.get_logger().info(f"Updated Position: ({self.x}, {self.y}), Theta: {self.theta}, "
+                               f"Delta Global: ({delta_global_x}, {delta_global_y})")
 
     def update(self):
         # Update position
