@@ -7,7 +7,7 @@ from geometry_msgs.msg import TransformStamped
 from rclpy.node import Node
 
 
-def compute_distance_from_odom(wheel_front_left, wheel_front_right, wheel_back_left, wheel_back_right):
+def compute_delta_position(wheel_front_left, wheel_front_right, wheel_back_left, wheel_back_right):
     r = 0.04  # Wheel radius in meters
     L = 0.08  # Distance from center to front/back wheels
     W = 0.15  # Distance from center to side wheels
@@ -22,13 +22,13 @@ def compute_distance_from_odom(wheel_front_left, wheel_front_right, wheel_back_l
     return x, y, theta
 
 
-def compute_transformations(old_position, wheel_front_left, wheel_front_right, wheel_back_left, wheel_back_right):
-    x, y, theta = compute_distance_from_odom(wheel_front_left, wheel_front_right, wheel_back_left, wheel_back_right)
-    delta_x = x - old_position[0]
-    delta_y = y - old_position[1]
-    delta_theta = theta - old_position[2]
-
-    return delta_x, delta_y, delta_theta
+# def compute_transformations(old_position, wheel_front_left, wheel_front_right, wheel_back_left, wheel_back_right):
+#     x, y, theta = compute_distance_from_odom(wheel_front_left, wheel_front_right, wheel_back_left, wheel_back_right)
+#     delta_x = x - old_position[0]
+#     delta_y = y - old_position[1]
+#     delta_theta = theta - old_position[2]
+#
+#     return delta_x, delta_y, delta_theta
 
 
 class DynamicTransformBroadcaster(Node):
@@ -50,6 +50,11 @@ class DynamicTransformBroadcaster(Node):
         self.theta = 0.0
 
         # Initialize wheel speeds
+        self.old_wheel_front_left = 0.0
+        self.old_wheel_front_right = 0.0
+        self.old_wheel_back_left = 0.0
+        self.old_wheel_back_right = 0.0
+
         self.wheel_front_left = 0.0
         self.wheel_front_right = 0.0
         self.wheel_back_left = 0.0
@@ -66,32 +71,36 @@ class DynamicTransformBroadcaster(Node):
             self.get_logger().error('Failed to establish connection: ' + str(e))
 
     def update_position(self):
+        delta_wheel_front_left = self.wheel_front_left - self.old_wheel_front_left
+        delta_wheel_front_right = self.wheel_front_right - self.old_wheel_front_right
+        delta_wheel_back_left = self.wheel_back_left - self.old_wheel_back_left
+        delta_wheel_back_right = self.wheel_back_right - self.old_wheel_back_right
+
         # Compute the new position and orientation
-        delta_local_x, delta_local_y, delta_theta = compute_transformations(
-            (self.x, self.y, self.theta),
-            self.wheel_front_left,
-            self.wheel_front_right,
-            self.wheel_back_left,
-            self.wheel_back_right
+        delta_local_x, delta_local_y, delta_theta = compute_delta_position(
+            delta_wheel_front_left,
+            delta_wheel_front_right,
+            delta_wheel_back_left,
+            delta_wheel_back_right
         )
 
         # Update the current position and orientation
-        self.theta = np.mod(self.theta + delta_theta, 2 * np. pi)
+        self.theta = np.mod(self.theta + delta_theta, 2 * np.pi)
         delta_global_x = delta_local_x * math.cos(self.theta) - delta_local_y * math.sin(self.theta)
         delta_global_y = delta_local_x * math.sin(self.theta) + delta_local_y * math.cos(self.theta)
 
         if 0 <= self.theta < np.pi/4:
             self.x += delta_global_x
             self.y += delta_global_y
-        if np.pi/4 <= self.theta < np.pi/2:
-            self.x += delta_global_y
-            self.y += -delta_global_x
-        if np.pi/2 <= self.theta < np.pi*3/4:
-            self.x += -delta_global_x
-            self.y += -delta_global_y
-        if np.pi*3/4 <= self.theta < np.pi*2:
+        elif np.pi/4 <= self.theta < np.pi/2:
             self.x += -delta_global_y
             self.y += delta_global_x
+        elif np.pi/2 <= self.theta < np.pi*3/4:
+            self.x += -delta_global_x
+            self.y += -delta_global_y
+        else:
+            self.x += delta_global_y
+            self.y += -delta_global_x
 
 
         self.get_logger().info(f"Theta: {self.theta}, Encoder Left Front {self.wheel_front_left}, Encoder Right Front {self.wheel_front_right}, Encoder Left Back {self.wheel_back_left}, Encoder Right Back {self.wheel_back_right}")
@@ -109,17 +118,16 @@ class DynamicTransformBroadcaster(Node):
         # Dynamic transform from 'base_link' to 'laser'
         self.broadcast_dynamic_transform('base_link', 'laser', 0.0, 0.0, math.pi / 4)
 
-        # Dynamic transform for each wheel
-        # self.broadcast_dynamic_transform('base_link', 'left_front_wheel', 0.0475, 0.13, self.wheel_front_left)
-        # self.broadcast_dynamic_transform('base_link', 'right_front_wheel', 0.0475, -0.13, self.wheel_front_right)
-        # self.broadcast_dynamic_transform('base_link', 'left_back_wheel', -0.0475, 0.13, self.wheel_back_left)
-        # self.broadcast_dynamic_transform('base_link', 'right_back_wheel', -0.0475, -0.13, self.wheel_back_right)
-
         try:
             if self.serial_connection.in_waiting > 0:
                 serial_data = self.serial_connection.readline().decode('utf-8').strip()
 
                 if serial_data.startswith("OUT: "):
+                    self.old_wheel_front_left = self.wheel_front_left
+                    self.old_wheel_front_right = self.wheel_front_right
+                    self.old_wheel_back_left = self.wheel_back_left
+                    self.old_wheel_back_right = self.wheel_back_right
+
                     wheel_speeds = serial_data[4:].split(',')
                     self.wheel_front_left, self.wheel_front_right, self.wheel_back_left, self.wheel_back_right = map(float, wheel_speeds)
 
