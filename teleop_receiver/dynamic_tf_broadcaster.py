@@ -17,7 +17,7 @@ def compute_velocity(wheel_front_left, wheel_front_right, wheel_back_left, wheel
     vy = (((-wheel_front_left + wheel_front_right + wheel_back_left - wheel_back_right)/4)/1440) * (r * 2 * np.pi)
 
     # Compute the angular velocity, accounting for both length (L) and width (W)
-    vtheta = math.pi * (r / (4 * (L + W))) * (-wheel_front_left + wheel_front_right - wheel_back_left + wheel_back_right) / 1440
+    vtheta = 2 * math.pi * (r / (4 * (L + W))) * (-wheel_front_left + wheel_front_right - wheel_back_left + wheel_back_right) / 1440
 
     return vx, vy, vtheta
 
@@ -67,16 +67,20 @@ class DynamicTransformBroadcaster(Node):
         )
 
         # Update the current position and orientation
-        self.theta += vel_theta * delta_t
-        self.x += vel_x * delta_t
-        self.y += vel_y * delta_t
-        # self.theta = np.mod(self.theta + vel_theta * delta_t, 2 * np.pi)
-        # delta_x = (vel_x * math.cos(self.theta) - vel_y * math.sin(self.theta)) * delta_t
-        # delta_y = (vel_x * math.sin(self.theta) + vel_y * math.cos(self.theta)) * delta_t
+        # self.theta += vel_theta * delta_t
+        # self.x += vel_x * delta_t
+        # self.y += vel_y * delta_t
 
+
+        self.theta = np.mod(self.theta + vel_theta * delta_t, 2 * np.pi)
+        delta_x = (vel_x * math.cos(self.theta) - vel_y * math.sin(self.theta)) * delta_t
+        delta_y = (vel_x * math.sin(self.theta) + vel_y * math.cos(self.theta)) * delta_t
+        
+        self.x += delta_x
+        self.y += delta_y
         # if 0 <= self.theta < np.pi/4:
-        #     self.x += delta_x
-        #     self.y += delta_y
+            # self.x += delta_x
+            # self.y += delta_y
         # elif np.pi/4 <= self.theta < np.pi/2:
         #     self.x += -delta_y
         #     self.y += delta_x
