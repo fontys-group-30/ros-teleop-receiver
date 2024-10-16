@@ -75,16 +75,23 @@ class DynamicTransformBroadcaster(Node):
             self.wheel_back_right
         )
 
-        # Update the current orientation
+        # Update the current position and orientation
         self.theta = np.mod(self.theta + delta_theta, 2 * np.pi)
-
-        # Calculate global displacements
         delta_global_x = delta_local_x * math.cos(self.theta) - delta_local_y * math.sin(self.theta)
         delta_global_y = delta_local_x * math.sin(self.theta) + delta_local_y * math.cos(self.theta)
 
-        # Update the position
-        self.x += delta_global_x
-        self.y += delta_global_y
+        if 0 <= self.theta < np.pi/4:
+            self.x += delta_global_x
+            self.y += delta_global_y
+        if np.pi/4 <= self.theta < np.pi/2:
+            self.x += delta_global_y
+            self.y += -delta_global_x
+        if np.pi/2 <= self.theta < np.pi*3/4:
+            self.x += -delta_global_x
+            self.y += -delta_global_y
+        if np.pi*3/4 <= self.theta < np.pi*2:
+            self.x += -delta_global_y
+            self.y += delta_global_x
 
         self.get_logger().info(f"Theta: {self.theta}, Encoder Left Front {self.wheel_front_left}, Encoder Right Front {self.wheel_front_right}, Encoder Left Back {self.wheel_back_left}, Encoder Right Back {self.wheel_back_right}")
 
