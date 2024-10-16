@@ -77,18 +77,19 @@ class DynamicTransformBroadcaster(Node):
 
         # Update the current position and orientation
         self.theta = np.mod(self.theta + delta_theta, 2 * np. pi)
-        delta_global_x = delta_x * math.cos(self.theta) - delta_y * math.sin(self.theta)
-        delta_global_y = delta_x * math.sin(self.theta) + delta_y * math.cos(self.theta)
-        if self.theta>=0 and self.theta< np.pi/4:
+        delta_global_x = delta_local_x * math.cos(self.theta) - delta_local_y * math.sin(self.theta)
+        delta_global_y = delta_local_x * math.sin(self.theta) + delta_local_y * math.cos(self.theta)
+
+        if 0 <= self.theta < np.pi/4:
             self.x += delta_global_x
             self.y += delta_global_y
-        if self.theta>=np.pi/4 and self.theta<np.pi/2
+        if np.pi/4 <= self.theta < np.pi/2:
             self.x += delta_global_y
             self.y += -delta_global_x
-        if self.theta>=np.pi/2 and self.theta<np.pi*3/4
+        if np.pi/2 <= self.theta < np.pi*3/4:
             self.x += -delta_global_x
             self.y += -delta_global_y
-        if self.theta>=np.pi*3/4 and self.theta<np.pi*2
+        if np.pi*3/4 <= self.theta < np.pi*2:
             self.x += -delta_global_y
             self.y += delta_global_x
         
