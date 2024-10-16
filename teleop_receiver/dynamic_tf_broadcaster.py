@@ -18,20 +18,30 @@ def euler_to_quaternion(z):
     ]
 
 
-def compute_distance_from_odom(wheel_front_left, wheel_front_right, wheel_back_left, wheel_back_right):
+def compute_distance_from_odom(wheel_front_left, wheel_front_right, wheel_back_left, wheel_back_right, time_interval):
     r = 0.04  # Wheel radius in meters
     L = 0.08  # Distance from center to front/back wheels
     W = 0.15  # Distance from center to side wheels
 
-    # Compute velocities in the robot's local frame
-    x = (((wheel_front_left + wheel_front_right + wheel_back_left + wheel_back_right) / 4) / 1440) * (r * 2 * np.pi)
-    y = (((-wheel_front_left + wheel_front_right + wheel_back_left - wheel_back_right) / 4) / 1440) * (r * 2 * np.pi)
+    # Convert encoder values to wheel speeds (in meters per second)
+    # The number of encoder counts per revolution
+    encoder_counts_per_rev = 1440
 
-    # Compute the angular velocity, accounting for both length (L) and width (W)
-    theta = 2.98 * (r / (4 * (L + W))) * (
-                -wheel_front_left + wheel_front_right - wheel_back_left + wheel_back_right) / 1440
+    # Calculate the wheel velocities
+    v_front_left = (wheel_front_left / encoder_counts_per_rev) * (r * 2 * np.pi) / time_interval
+    v_front_right = (wheel_front_right / encoder_counts_per_rev) * (r * 2 * np.pi) / time_interval
+    v_back_left = (wheel_back_left / encoder_counts_per_rev) * (r * 2 * np.pi) / time_interval
+    v_back_right = (wheel_back_right / encoder_counts_per_rev) * (r * 2 * np.pi) / time_interval
 
-    return x, y, theta
+    # Compute the average velocities for the robot
+    vx = (v_front_left + v_front_right + v_back_left + v_back_right) / 4
+    vy = (-v_front_left + v_front_right + v_back_left - v_back_right) / 4
+
+    # Compute the angular velocity
+    theta_dot = 2.98 * (r / (4 * (L + W))) * (-wheel_front_left + wheel_front_right - wheel_back_left + wheel_back_right) / encoder_counts_per_rev / time_interval
+
+    return vx, vy, theta_dot
+
 
 
 def compute_transformations(old_position, wheel_front_left, wheel_front_right, wheel_back_left, wheel_back_right):
@@ -80,27 +90,28 @@ class DynamicTransformBroadcaster(Node):
 
     def update_position(self):
         # Compute the new position and orientation
-        delta_local_x, delta_local_y, delta_theta = compute_transformations(
-            (self.x, self.y, self.theta),
+        time_interval = 0.1  # seconds
+        vx, vy, theta_dot = compute_distance_from_odom(
             self.wheel_front_left,
             self.wheel_front_right,
             self.wheel_back_left,
-            self.wheel_back_right
+            self.wheel_back_right,
+            time_interval
         )
 
-        # Update the current orientation
-        self.theta = np.mod(self.theta + delta_theta, 2 * np.pi)
+        # Update the orientation
+        self.theta = np.mod(self.theta + theta_dot * time_interval, 2 * np.pi)
 
         # Calculate global displacements
-        delta_global_x = delta_local_x * math.cos(self.theta) - delta_local_y * math.sin(self.theta)
-        delta_global_y = delta_local_x * math.sin(self.theta) + delta_local_y * math.cos(self.theta)
+        delta_global_x = vx * math.cos(self.theta) - vy * math.sin(self.theta)
+        delta_global_y = vx * math.sin(self.theta) + vy * math.cos(self.theta)
 
         # Update the position
         self.x += delta_global_x
         self.y += delta_global_y
 
         self.get_logger().info(
-            f"Theta: {self.theta}, Encoder Left Front {self.wheel_front_left}, Encoder Right Front {self.wheel_front_right}, Encoder Left Back {self.wheel_back_left}, Encoder Right Back {self.wheel_back_right}")
+            f"Theta: {self.theta}, vx: {vx}, vy: {vy}, Encoder Left Front: {self.wheel_front_left}, Encoder Right Front: {self.wheel_front_right}, Encoder Left Back: {self.wheel_back_left}, Encoder Right Back: {self.wheel_back_right}")
 
     def update(self):
         # Update position
