@@ -7,28 +7,19 @@ from geometry_msgs.msg import TransformStamped
 from rclpy.node import Node
 
 
-def compute_delta_position(wheel_front_left, wheel_front_right, wheel_back_left, wheel_back_right):
+def compute_velocity(wheel_front_left, wheel_front_right, wheel_back_left, wheel_back_right):
     r = 0.04  # Wheel radius in meters
     L = 0.08  # Distance from center to front/back wheels
     W = 0.15  # Distance from center to side wheels
 
     # Compute velocities in the robot's local frame
-    x = (((wheel_front_left + wheel_front_right + wheel_back_left + wheel_back_right)/4)/1440) * (r * 2 * np.pi)
-    y = (((-wheel_front_left + wheel_front_right + wheel_back_left - wheel_back_right)/4)/1440) * (r * 2 * np.pi)
+    vx = ((wheel_front_left + wheel_front_right + wheel_back_left + wheel_back_right) / 4) * (r * 2 * np.pi)
+    vy = ((-wheel_front_left + wheel_front_right + wheel_back_left - wheel_back_right) / 4) * (r * 2 * np.pi)
 
     # Compute the angular velocity, accounting for both length (L) and width (W)
-    theta = 2.98*(r / (4 * (L + W))) * (-wheel_front_left + wheel_front_right - wheel_back_left + wheel_back_right) / 1440
+    vtheta = (r / (4 * (L + W))) * (-wheel_front_left + wheel_front_right - wheel_back_left + wheel_back_right)
 
-    return x, y, theta
-
-
-# def compute_transformations(old_position, wheel_front_left, wheel_front_right, wheel_back_left, wheel_back_right):
-#     x, y, theta = compute_distance_from_odom(wheel_front_left, wheel_front_right, wheel_back_left, wheel_back_right)
-#     delta_x = x - old_position[0]
-#     delta_y = y - old_position[1]
-#     delta_theta = theta - old_position[2]
-#
-#     return delta_x, delta_y, delta_theta
+    return vx, vy, vtheta
 
 
 class DynamicTransformBroadcaster(Node):
@@ -49,12 +40,6 @@ class DynamicTransformBroadcaster(Node):
         self.y = 0.0
         self.theta = 0.0
 
-        # Initialize wheel speeds
-        self.old_wheel_front_left = 0.0
-        self.old_wheel_front_right = 0.0
-        self.old_wheel_back_left = 0.0
-        self.old_wheel_back_right = 0.0
-
         self.wheel_front_left = 0.0
         self.wheel_front_right = 0.0
         self.wheel_back_left = 0.0
@@ -71,36 +56,33 @@ class DynamicTransformBroadcaster(Node):
             self.get_logger().error('Failed to establish connection: ' + str(e))
 
     def update_position(self):
-        delta_wheel_front_left = self.wheel_front_left - self.old_wheel_front_left
-        delta_wheel_front_right = self.wheel_front_right - self.old_wheel_front_right
-        delta_wheel_back_left = self.wheel_back_left - self.old_wheel_back_left
-        delta_wheel_back_right = self.wheel_back_right - self.old_wheel_back_right
+        delta_t = 0.1
 
         # Compute the new position and orientation
-        delta_local_x, delta_local_y, delta_theta = compute_delta_position(
-            delta_wheel_front_left,
-            delta_wheel_front_right,
-            delta_wheel_back_left,
-            delta_wheel_back_right
+        vel_x, vel_y, vel_theta = compute_velocity(
+            self.wheel_front_left,
+            self.wheel_front_right,
+            self.wheel_back_left,
+            self.wheel_back_right
         )
 
         # Update the current position and orientation
-        self.theta = np.mod(self.theta + delta_theta, 2 * np.pi)
-        delta_global_x = delta_local_x * math.cos(self.theta) - delta_local_y * math.sin(self.theta)
-        delta_global_y = delta_local_x * math.sin(self.theta) + delta_local_y * math.cos(self.theta)
+        self.theta = np.mod(self.theta + vel_theta * delta_t, 2 * np.pi)
+        delta_x = (vel_x * math.cos(self.theta) - vel_y * math.sin(self.theta)) * delta_t
+        delta_y = (vel_x * math.sin(self.theta) + vel_y * math.cos(self.theta)) * delta_t
 
         if 0 <= self.theta < np.pi/4:
-            self.x += delta_global_x
-            self.y += delta_global_y
+            self.x += delta_x
+            self.y += delta_y
         elif np.pi/4 <= self.theta < np.pi/2:
-            self.x += -delta_global_y
-            self.y += delta_global_x
+            self.x += -delta_y
+            self.y += delta_x
         elif np.pi/2 <= self.theta < np.pi*3/4:
-            self.x += -delta_global_x
-            self.y += -delta_global_y
+            self.x += -delta_x
+            self.y += -delta_y
         else:
-            self.x += delta_global_y
-            self.y += -delta_global_x
+            self.x += delta_y
+            self.y += -delta_x
 
 
         self.get_logger().info(f"Theta: {self.theta}, Encoder Left Front {self.wheel_front_left}, Encoder Right Front {self.wheel_front_right}, Encoder Left Back {self.wheel_back_left}, Encoder Right Back {self.wheel_back_right}")
