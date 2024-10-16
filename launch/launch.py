@@ -24,12 +24,6 @@ def generate_launch_description():
         ),
         Node(
             package='teleop-receiver',
-            executable='odom',
-            name='odom',
-            output='log'
-        ),
-        Node(
-            package='teleop-receiver',
             executable='receiver_node',
             name='receiver_node',
             output='log'
