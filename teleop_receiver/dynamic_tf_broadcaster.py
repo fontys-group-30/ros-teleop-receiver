@@ -76,8 +76,8 @@ class DynamicTransformBroadcaster(Node):
         )
 
         # Update the current position and orientation
-        self.x += delta_x * math.cos(self.theta) + delta_y * math.sin(self.theta)
-        self.y += delta_y * math.cos(self.theta) + delta_x * math.sin(self.theta)
+        self.x += delta_x * math.cos(self.theta) - delta_y * math.sin(self.theta)
+        self.y += delta_x * math.sin(self.theta) + delta_y * math.cos(self.theta)
         self.theta += delta_theta
 
         self.get_logger().info(f"Theta: {self.theta}, Encoder Left Front {self.wheel_front_left}, Encoder Right Front {self.wheel_front_right}, Encoder Left Back {self.wheel_back_left}, Encoder Right Back {self.wheel_back_right}")
