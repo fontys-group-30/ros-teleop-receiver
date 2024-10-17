@@ -48,6 +48,9 @@ class DynamicTransformBroadcaster(Node):
         self.wheel_back_left = 0.0
         self.wheel_back_right = 0.0
 
+        # Precompute the transformation matrix
+        self.update_transformation_matrix()
+
         # Set up a timer to call update every 0.1 seconds
         self.timer = self.create_timer(0.1, self.update)
 
