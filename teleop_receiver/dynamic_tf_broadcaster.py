@@ -4,6 +4,7 @@ import serial
 import tf2_ros
 import numpy as np
 from geometry_msgs.msg import TransformStamped
+from mpi4py.futures.aplus import catch
 from rclpy.node import Node
 
 
@@ -25,6 +26,8 @@ def compute_velocity(wheel_front_left, wheel_front_right, wheel_back_left, wheel
 class DynamicTransformBroadcaster(Node):
     def __init__(self):
         super().__init__('dynamic_tf_broadcaster')
+        self.T_fwd = None
+        self.last_time = self.get_clock().now()
         self.serial_connection = None
         self.declare_parameter('serial_port', '/dev/ttyACM0')
         self.declare_parameter('baud_rate', 115200)
@@ -99,7 +102,7 @@ class DynamicTransformBroadcaster(Node):
 
     def update(self):
         # Update position
-        self.update_position()
+        self.motor_velocities_callback(self.wheel_front_left, self.wheel_front_right, self.wheel_back_left, self.wheel_back_right)
 
         # Dynamic transform from 'odom' to 'base_footprint'
         self.broadcast_dynamic_transform('odom', 'base_footprint', self.x, self.y, self.theta)
@@ -115,11 +118,6 @@ class DynamicTransformBroadcaster(Node):
                 serial_data = self.serial_connection.readline().decode('utf-8').strip()
 
                 if serial_data.startswith("OUT: "):
-                    self.old_wheel_front_left = self.wheel_front_left
-                    self.old_wheel_front_right = self.wheel_front_right
-                    self.old_wheel_back_left = self.wheel_back_left
-                    self.old_wheel_back_right = self.wheel_back_right
-
                     wheel_speeds = serial_data[4:].split(',')
                     self.wheel_front_left, self.wheel_front_right, self.wheel_back_left, self.wheel_back_right = map(float, wheel_speeds)
 
@@ -148,6 +146,42 @@ class DynamicTransformBroadcaster(Node):
 
         # Send the dynamic transform
         self.broadcaster.sendTransform(t)
+
+    def motor_velocities_callback(self, wheel_front_left, wheel_front_right, wheel_back_left, wheel_back_right):
+        current_time = self.get_clock().now()
+        dt_duration = current_time - self.last_time
+        dt = dt_duration.nanoseconds / 1e9
+        if dt <= 0.0:
+            return
+        self.last_time = current_time
+
+        wheel_angular_velocities = np.array([
+            wheel_front_left,  # Front-Left Wheel
+            wheel_front_right,  # Front-Right Wheel
+            wheel_back_left,  # Rear-Left Wheel
+            wheel_back_right  # Rear-Right Wheel
+        ])
+
+        robot_velocities = self.T_fwd @ wheel_angular_velocities
+        vx, vy, omega = robot_velocities
+
+        delta_x = (vx * math.cos(self.theta) - vy * math.sin(self.theta)) * dt
+        delta_y = (vx * math.sin(self.theta) + vy * math.cos(self.theta)) * dt
+        delta_theta = omega * dt
+
+        self.x += delta_x
+        self.y += delta_y
+        self.theta = np.mod(self.theta + delta_theta, 2 * np.pi)
+
+            
+    def update_transformation_matrix(self):
+        """Precomputes the transformation matrix for forward kinematics."""
+        self.T_fwd = (0.04 / 4) * np.array([
+            [1, 1, 1, 1],  # Forward/backward component (vx)
+            [-1, 1, 1, -1],  # Lateral component (vy)
+            [-1 / (0.15 + 0.15), 1 / (0.15 + 0.15),
+             -1 / (0.15 + 0.15), 1 / (0.15 + 0.15)]  # Rotational component (omega)
+        ])
 
 
 def main():
