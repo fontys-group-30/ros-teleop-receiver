@@ -14,7 +14,7 @@ def compute_velocity(wheel_front_left, wheel_front_right, wheel_back_left, wheel
     vx = (((wheel_front_left + wheel_front_right + wheel_back_left + wheel_back_right)/4)/1440) * (r * 2 * np.pi)
     vy = (((-wheel_front_left + wheel_front_right + wheel_back_left - wheel_back_right)/4)/1440) * (r * 2 * np.pi)
 
-    vw = (((wheel_front_left + wheel_front_right + wheel_back_left + wheel_back_right) / 4) / 1440) * r
+    vw = wheel_front_left * r
 
     return vx, vy, vw
 
@@ -44,6 +44,7 @@ class DynamicTransformBroadcaster(Node):
         self.x = 0.0
         self.y = 0.0
         self.theta = 0.0
+        self.angle = 0.0
 
         self.wheel_front_left = 0.0
         self.wheel_front_right = 0.0
@@ -78,23 +79,23 @@ class DynamicTransformBroadcaster(Node):
             self.wheel_back_right
         )
 
-        ang_r = compute_angular_speed_robot(vel_w)
+        self.angle = compute_angular_speed_robot(vel_w) * dt
 
-        self.theta = np.mod(ang_r, 2 * np.pi)
+        self.theta = compute_angular_speed_robot(vel_w) * dt
         delta_x = (vel_x * math.cos(self.theta) - vel_y * math.sin(self.theta)) * dt
         delta_y = (vel_x * math.sin(self.theta) + vel_y * math.cos(self.theta)) * dt
 
         self.x += delta_x
         self.y += delta_y
 
-        self.get_logger().info(f"Theta: {ang_r}, Encoder Left Front {self.wheel_front_left}, Encoder Right Front {self.wheel_front_right}, Encoder Left Back {self.wheel_back_left}, Encoder Right Back {self.wheel_back_right}")
+        self.get_logger().info(f"Theta: {self.angle}, Encoder Left Front {self.wheel_front_left}, Encoder Right Front {self.wheel_front_right}, Encoder Left Back {self.wheel_back_left}, Encoder Right Back {self.wheel_back_right}")
 
     def update(self):
         # Update position
         self.update_position()
 
         # Dynamic transform from 'odom' to 'base_footprint'
-        self.broadcast_dynamic_transform('odom', 'base_footprint', self.x, self.y, self.theta)
+        self.broadcast_dynamic_transform('odom', 'base_footprint', self.x, self.y, self.angle)
 
         # Dynamic transform from 'base_footprint' to 'base_link'
         self.broadcast_dynamic_transform('base_footprint', 'base_link', 0.0, 0.0, 0.0)
