@@ -87,7 +87,7 @@ class DynamicTransformBroadcaster(Node):
         self.x += delta_x
         self.y += delta_y
 
-        self.get_logger().info(f"Theta: {self.theta}, Encoder Left Front {self.wheel_front_left}, Encoder Right Front {self.wheel_front_right}, Encoder Left Back {self.wheel_back_left}, Encoder Right Back {self.wheel_back_right}")
+        self.get_logger().info(f"Theta: {ang_r}, Encoder Left Front {self.wheel_front_left}, Encoder Right Front {self.wheel_front_right}, Encoder Left Back {self.wheel_back_left}, Encoder Right Back {self.wheel_back_right}")
 
     def update(self):
         # Update position
