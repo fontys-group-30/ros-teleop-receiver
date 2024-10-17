@@ -6,12 +6,6 @@ import numpy as np
 from geometry_msgs.msg import TransformStamped
 from rclpy.node import Node
 
-def convert_to_meter_per_second(arduino_value):
-    # Convert encoder ticks to meters per second
-    wheel_radius = 0.04  # Wheel radius in meters
-    encoder_ticks_per_rev = 1440  # Encoder ticks per revolution
-    return (arduino_value / encoder_ticks_per_rev) * (2 * np.pi * wheel_radius)
-
 
 def compute_velocity(wheel_front_left, wheel_front_right, wheel_back_left, wheel_back_right):
     r = 0.04  # Wheel radius in meters
@@ -19,11 +13,11 @@ def compute_velocity(wheel_front_left, wheel_front_right, wheel_back_left, wheel
     W = 0.15  # Distance from center to side wheels
 
     # Compute velocities in the robot's local frame
-    vx = ((convert_to_meter_per_second(wheel_front_left) + convert_to_meter_per_second(wheel_front_right) + convert_to_meter_per_second(wheel_back_left) + convert_to_meter_per_second(wheel_back_right)) / 4)
-    vy = ((-convert_to_meter_per_second(wheel_front_left) + convert_to_meter_per_second(wheel_front_right) + convert_to_meter_per_second(wheel_back_left) - convert_to_meter_per_second(wheel_back_right)) / 4)
+    vx = (((wheel_front_left + wheel_front_right + wheel_back_left + wheel_back_right)/4)/1440) * (2 * np.pi)
+    vy = (((-wheel_front_left + wheel_front_right + wheel_back_left - wheel_back_right)/4)/1440) * (2 * np.pi)
 
     # Compute the angular velocity, accounting for both length (L) and width (W)
-    vtheta = math.pi * (r / (4 * (L + W))) * (-convert_to_meter_per_second(wheel_front_left) + convert_to_meter_per_second(wheel_front_right) - convert_to_meter_per_second(wheel_back_left) + convert_to_meter_per_second(wheel_back_right)) / 1440
+    vtheta = math.pi * (r / (4 * (L + W))) * (-wheel_front_left + wheel_front_right - wheel_back_left + wheel_back_right) / 1440
 
     return vx, vy, vtheta
 
