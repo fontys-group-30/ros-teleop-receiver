@@ -47,6 +47,8 @@ class DynamicTransformBroadcaster(Node):
 
         # Set up a timer to call update every 0.1 seconds
         self.timer = self.create_timer(0.1, self.update)
+        self.last_time = self.get_clock().now()
+
 
     def setup_serial(self):
         try:
@@ -56,7 +58,12 @@ class DynamicTransformBroadcaster(Node):
             self.get_logger().error('Failed to establish connection: ' + str(e))
 
     def update_position(self):
-        delta_t = 0.1
+        current_time = self.get_clock().now()
+        dt_duration = current_time - self.last_time
+        dt = dt_duration.nanoseconds / 1e9
+        if dt <= 0.0:
+            return
+        self.last_time = current_time
 
         # Compute the new position and orientation
         vel_x, vel_y, vel_theta = compute_velocity(
@@ -66,31 +73,12 @@ class DynamicTransformBroadcaster(Node):
             self.wheel_back_right
         )
 
-        # Update the current position and orientation
-        # self.theta += vel_theta * delta_t
-        # self.x += vel_x * delta_t
-        # self.y += vel_y * delta_t
+        self.theta = np.mod(self.theta + vel_theta * dt, 2 * np.pi)
+        delta_x = (vel_x * math.cos(self.theta) - vel_y * math.sin(self.theta)) * dt
+        delta_y = (vel_x * math.sin(self.theta) + vel_y * math.cos(self.theta)) * dt
 
-
-        self.theta = np.mod(self.theta + vel_theta * delta_t, 2 * np.pi)
-        delta_x = (vel_x * math.cos(self.theta) - vel_y * math.sin(self.theta)) * delta_t
-        delta_y = (vel_x * math.sin(self.theta) + vel_y * math.cos(self.theta)) * delta_t
-        
         self.x += delta_x
         self.y += delta_y
-        # if 0 <= self.theta < np.pi/4:
-            # self.x += delta_x
-            # self.y += delta_y
-        # elif np.pi/4 <= self.theta < np.pi/2:
-        #     self.x += -delta_y
-        #     self.y += delta_x
-        # elif np.pi/2 <= self.theta < np.pi*3/4:
-        #     self.x += -delta_x
-        #     self.y += -delta_y
-        # else:
-        #     self.x += delta_y
-        #     self.y += -delta_x
-        #
 
         self.get_logger().info(f"Theta: {self.theta}, Encoder Left Front {self.wheel_front_left}, Encoder Right Front {self.wheel_front_right}, Encoder Left Back {self.wheel_back_left}, Encoder Right Back {self.wheel_back_right}")
 
@@ -112,11 +100,6 @@ class DynamicTransformBroadcaster(Node):
                 serial_data = self.serial_connection.readline().decode('utf-8').strip()
 
                 if serial_data.startswith("OUT: "):
-                    self.old_wheel_front_left = self.wheel_front_left
-                    self.old_wheel_front_right = self.wheel_front_right
-                    self.old_wheel_back_left = self.wheel_back_left
-                    self.old_wheel_back_right = self.wheel_back_right
-
                     wheel_speeds = serial_data[4:].split(',')
                     self.wheel_front_left, self.wheel_front_right, self.wheel_back_left, self.wheel_back_right = map(float, wheel_speeds)
 
