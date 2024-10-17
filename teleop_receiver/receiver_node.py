@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import rclpy
+from hgext.histedit import message
 from rclpy.node import Node
 from geometry_msgs.msg import Twist
 import serial
@@ -35,8 +36,9 @@ class ReceiverNode(Node):
         # Send the wheel velocities to the Arduino
         try:
             message_str = f"IN: {round(wheel_front_left, 1)},{round(wheel_front_right, 1)},{round(wheel_back_left, 1)},{round(wheel_back_right, 1)} \n"
+            print(message_str)
+
             self.serial_connection.write(message_str.encode())
-            self.get_logger().info(message_str)
         except Exception as e:
             self.get_logger().info('Failed to send message: ' + str(e))
 

@@ -49,11 +49,8 @@ class DynamicTransformBroadcaster(Node):
         self.timer = self.create_timer(0.1, self.update)
 
     def setup_serial(self):
-        try:
-            self.serial_connection = serial.Serial(self.get_parameter('serial_port').value, self.get_parameter('baud_rate').value, timeout=1)
-            self.get_logger().info('Serial Connection Established')
-        except Exception as e:
-            self.get_logger().error('Failed to establish connection: ' + str(e))
+        self.serial_connection = serial.Serial(self.get_parameter('serial_port').value, self.get_parameter('baud_rate').value, timeout=1)
+
 
     def update_position(self):
         delta_t = 0.1
@@ -115,11 +112,6 @@ class DynamicTransformBroadcaster(Node):
                 serial_data = self.serial_connection.readline().decode('utf-8').strip()
 
                 if serial_data.startswith("OUT: "):
-                    self.old_wheel_front_left = self.wheel_front_left
-                    self.old_wheel_front_right = self.wheel_front_right
-                    self.old_wheel_back_left = self.wheel_back_left
-                    self.old_wheel_back_right = self.wheel_back_right
-
                     wheel_speeds = serial_data[4:].split(',')
                     self.wheel_front_left, self.wheel_front_right, self.wheel_back_left, self.wheel_back_right = map(float, wheel_speeds)
 
