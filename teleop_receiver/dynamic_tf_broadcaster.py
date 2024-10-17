@@ -9,17 +9,22 @@ from rclpy.node import Node
 
 def compute_velocity(wheel_front_left, wheel_front_right, wheel_back_left, wheel_back_right):
     r = 0.04  # Wheel radius in meters
-    L = 0.08  # Distance from center to front/back wheels
-    W = 0.15  # Distance from center to side wheels
 
     # Compute velocities in the robot's local frame
     vx = (((wheel_front_left + wheel_front_right + wheel_back_left + wheel_back_right)/4)/1440) * (r * 2 * np.pi)
     vy = (((-wheel_front_left + wheel_front_right + wheel_back_left - wheel_back_right)/4)/1440) * (r * 2 * np.pi)
 
-    # Compute the angular velocity, accounting for both length (L) and width (W)
-    vtheta = math.pi * (r / (4 * (L + W))) * (-wheel_front_left + wheel_front_right - wheel_back_left + wheel_back_right) / 1440
+    vw = (((wheel_front_left + wheel_front_right + wheel_back_left + wheel_back_right) / 4) / 1440) * r
 
-    return vx, vy, vtheta
+    return vx, vy, vw
+
+def compute_angular_speed_robot(vw):
+    L = 0.08  # Distance from center to front/back wheels
+    W = 0.15  # Distance from center to side wheels
+
+    R = 0.5 * math.sqrt(L**2 + W**2)
+    return vw / R
+
 
 
 class DynamicTransformBroadcaster(Node):
@@ -66,14 +71,16 @@ class DynamicTransformBroadcaster(Node):
         self.last_time = current_time
 
         # Compute the new position and orientation
-        vel_x, vel_y, vel_theta = compute_velocity(
+        vel_x, vel_y, vel_w = compute_velocity(
             self.wheel_front_left,
             self.wheel_front_right,
             self.wheel_back_left,
             self.wheel_back_right
         )
 
-        self.theta = np.mod(self.theta + vel_theta * dt, 2 * np.pi)
+        ang_r = compute_angular_speed_robot(vel_w)
+
+        self.theta = np.mod(ang_r, 2 * np.pi)
         delta_x = (vel_x * math.cos(self.theta) - vel_y * math.sin(self.theta)) * dt
         delta_y = (vel_x * math.sin(self.theta) + vel_y * math.cos(self.theta)) * dt
 
