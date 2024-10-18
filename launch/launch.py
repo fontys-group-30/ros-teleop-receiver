@@ -12,8 +12,8 @@ def generate_launch_description():
     return LaunchDescription([
         Node(
             package='teleop-receiver',
-            executable='odom',
-            name='odom',
+            executable='odom_node',
+            name='odom_node',
             output='log'
         ),
         Node(
