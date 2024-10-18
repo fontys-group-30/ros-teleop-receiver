@@ -36,7 +36,7 @@ class ReceiverNode(Node):
         # Send the wheel velocities to the Arduino
         try:
             message_str = f"IN: {round(wheel_front_left, 1)},{round(wheel_front_right, 1)},{round(wheel_back_left, 1)},{round(wheel_back_right, 1)} \n"
-            print(message_str)
+            self.get_logger().info(message_str)
 
             self.serial_connection.write(message_str.encode())
         except Exception as e:

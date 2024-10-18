@@ -4,7 +4,9 @@ import serial
 import tf2_ros
 import numpy as np
 from geometry_msgs.msg import TransformStamped
+from nav_msgs.msg import Odometry
 from rclpy.node import Node
+from tf_transformations import quaternion_from_euler  # Import the quaternion_from_euler function
 
 
 def compute_velocity(wheel_front_left, wheel_front_right, wheel_back_left, wheel_back_right):
@@ -13,20 +15,20 @@ def compute_velocity(wheel_front_left, wheel_front_right, wheel_back_left, wheel
     W = 0.15  # Distance from center to side wheels
 
     # Compute velocities in the robot's local frame
-    vx = (((wheel_front_left + wheel_front_right + wheel_back_left + wheel_back_right)/4)/1440) * (r * 2 * np.pi)
-    vy = (((-wheel_front_left + wheel_front_right + wheel_back_left - wheel_back_right)/4)/1440) * (r * 2 * np.pi)
+    vx = (((wheel_front_left + wheel_front_right + wheel_back_left + wheel_back_right) / 4) / 1440) * (r * 2 * np.pi)
+    vy = (((-wheel_front_left + wheel_front_right + wheel_back_left - wheel_back_right) / 4) / 1440) * (r * 2 * np.pi)
 
     # Compute the angular velocity, accounting for both length (L) and width (W)
-    vtheta = ((-wheel_front_left + wheel_front_right - wheel_back_left + wheel_back_right) / 1440) * (r * 2 * np.pi / (4 * (L + W)))
+    vtheta = math.pi * (r / (4 * (L + W))) * (-wheel_front_left + wheel_front_right - wheel_back_left + wheel_back_right) / 1440
 
     return vx, vy, vtheta
 
 
 class DynamicTransformBroadcaster(Node):
-    def __init__(self):
-        super().__init__('dynamic_tf_broadcaster')
+    def _init_(self):
+        super()._init_('dynamic_tf_broadcaster')
         self.serial_connection = None
-        self.declare_parameter('serial_port', '/dev/ttyUSB0')
+        self.declare_parameter('serial_port', '/dev/ttyACM0')
         self.declare_parameter('baud_rate', 115200)
 
         # Set up serial connection
@@ -34,6 +36,9 @@ class DynamicTransformBroadcaster(Node):
 
         # Initialize transform broadcaster
         self.broadcaster = tf2_ros.TransformBroadcaster(self)
+
+        # Initialize odometry publisher
+        self.odom_publisher = self.create_publisher(Odometry, 'odom', 10)
 
         # Initialize position and orientation
         self.x = 0.0
@@ -49,9 +54,8 @@ class DynamicTransformBroadcaster(Node):
         self.timer = self.create_timer(0.1, self.update)
 
     def setup_serial(self):
-        self.serial_connection = serial.Serial(self.get_parameter('serial_port').value, self.get_parameter('baud_rate').value, timeout=1)
-
-
+        self.serial_connection = serial.Serial(self.get_parameter('serial_port').value,
+                                               self.get_parameter('baud_rate').value, timeout=1)
 
     def update_position(self):
         delta_t = 0.1
@@ -64,8 +68,7 @@ class DynamicTransformBroadcaster(Node):
             self.wheel_back_right
         )
 
-        # Update the current position and orientation
-        self.theta = (self.theta + vel_theta * delta_t) % (2 * np.pi)
+        self.theta = np.mod(self.theta + vel_theta * delta_t, 2 * np.pi)
 
         delta_x = (vel_x * math.cos(self.theta) - vel_y * math.sin(self.theta)) * delta_t
         delta_y = (vel_x * math.sin(self.theta) + vel_y * math.cos(self.theta)) * delta_t
@@ -77,14 +80,13 @@ class DynamicTransformBroadcaster(Node):
         # Update position
         self.update_position()
 
-        # Dynamic transform from 'odom' to 'base_footprint'
+        # Broadcast dynamic transforms
         self.broadcast_dynamic_transform('odom', 'base_footprint', self.x, self.y, self.theta)
-
-        # Dynamic transform from 'base_footprint' to 'base_link'
         self.broadcast_dynamic_transform('base_footprint', 'base_link', 0.0, 0.0, 0.0)
-
-        # Dynamic transform from 'base_link' to 'laser'
         self.broadcast_dynamic_transform('base_link', 'laser', 0.0, 0.0, math.pi / 4)
+
+        # Publish odometry information
+        self.publish_odometry()
 
         try:
             if self.serial_connection.in_waiting > 0:
@@ -92,10 +94,42 @@ class DynamicTransformBroadcaster(Node):
 
                 if serial_data.startswith("OUT: "):
                     wheel_speeds = serial_data[4:].split(',')
-                    self.wheel_front_left, self.wheel_front_right, self.wheel_back_left, self.wheel_back_right = map(float, wheel_speeds)
+                    self.wheel_front_left, self.wheel_front_right, self.wheel_back_left, self.wheel_back_right = map(
+                        float, wheel_speeds)
 
         except Exception as e:
             self.get_logger().error(f"Failed to read from serial connection: {str(e)}")
+
+    def publish_odometry(self):
+        # Create an Odometry message
+        odom_msg = Odometry()
+
+        # Set the timestamp and frame IDs
+        odom_msg.header.stamp = self.get_clock().now().to_msg()
+        odom_msg.header.frame_id = 'odom'  # Parent frame
+        odom_msg.child_frame_id = 'base_footprint'  # Child frame
+
+        # Set position
+        odom_msg.pose.pose.position.x = self.x
+        odom_msg.pose.pose.position.y = self.y
+        odom_msg.pose.pose.position.z = 0.0
+
+        # Set rotation using quaternion_from_euler
+        q = quaternion_from_euler(0.0, 0.0, self.theta)  # Assuming theta is the yaw angle
+        odom_msg.pose.pose.orientation.x = q[0]
+        odom_msg.pose.pose.orientation.y = q[1]
+        odom_msg.pose.pose.orientation.z = q[2]
+        odom_msg.pose.pose.orientation.w = q[3]
+
+        # Set linear velocity
+        odom_msg.twist.twist.linear.x = (
+                                                    self.wheel_front_left + self.wheel_front_right + self.wheel_back_left + self.wheel_back_right) / 4  # Average wheel speed for linear x
+        odom_msg.twist.twist.linear.y = 0.0  # Assuming no lateral velocity
+        odom_msg.twist.twist.angular.z = (
+                                                     self.wheel_front_right - self.wheel_front_left + self.wheel_back_right - self.wheel_back_left) / 4  # Simplified angular velocity
+
+        # Publish the Odometry message
+        self.odom_publisher.publish(odom_msg)
 
     def broadcast_dynamic_transform(self, parent_frame, child_frame, x, y, theta):
         # Create a TransformStamped message for dynamic transform
@@ -111,11 +145,12 @@ class DynamicTransformBroadcaster(Node):
         t.transform.translation.y = float(y)
         t.transform.translation.z = 0.0
 
-        # Set rotation using quaternion
-        t.transform.rotation.x = 0.0
-        t.transform.rotation.y = 0.0
-        t.transform.rotation.z = math.sin(theta)
-        t.transform.rotation.w = math.cos(theta)
+        # Set rotation using quaternion_from_euler
+        q = quaternion_from_euler(0.0, 0.0, theta)
+        t.transform.rotation.x = q[0]
+        t.transform.rotation.y = q[1]
+        t.transform.rotation.z = q[2]
+        t.transform.rotation.w = q[3]
 
         # Send the dynamic transform
         self.broadcaster.sendTransform(t)
@@ -134,6 +169,7 @@ def main():
     # Shutdown and cleanup
     node.destroy_node()
     rclpy.shutdown()
+
 
 if __name__ == '__main__':
     main()
