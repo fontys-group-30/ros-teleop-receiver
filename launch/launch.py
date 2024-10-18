@@ -33,6 +33,6 @@ def generate_launch_description():
         #     launch_arguments={'use_sim_time': 'false'}.items()
         # ),
         IncludeLaunchDescription(
-            PythonLaunchDescriptionSource(os.path.join(rplidar_ros_launch_dir, 'rplidar.launch.py')),
+            PythonLaunchDescriptionSource(os.path.join(rplidar_ros_launch_dir, 'rplidar_a1_launch.py')),
         ),
     ])
