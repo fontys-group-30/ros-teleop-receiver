@@ -11,12 +11,13 @@ def compute_velocity(wheel_front_left, wheel_front_right, wheel_back_left, wheel
     r = 0.04  # Wheel radius in meters
     L = 0.08  # Distance from center to front/back wheels
     W = 0.15  # Distance from center to side wheels
+
     # Compute velocities in the robot's local frame
     vx = (((wheel_front_left + wheel_front_right + wheel_back_left + wheel_back_right)/4)/1440) * (r * 2 * np.pi)
     vy = (((-wheel_front_left + wheel_front_right + wheel_back_left - wheel_back_right)/4)/1440) * (r * 2 * np.pi)
 
     # Compute the angular velocity, accounting for both length (L) and width (W)
-    vtheta = ((-wheel_front_left + wheel_front_right - wheel_back_left + wheel_back_right) / 1440) * (r * 2 * np.pi / (4 * (L + W)))
+    vtheta = math.pi * (r / (4 * (L + W))) * (-wheel_front_left + wheel_front_right - wheel_back_left + wheel_back_right) / 1440
 
     return vx, vy, vtheta
 
@@ -25,7 +26,7 @@ class DynamicTransformBroadcaster(Node):
     def __init__(self):
         super().__init__('dynamic_tf_broadcaster')
         self.serial_connection = None
-        self.declare_parameter('serial_port', '/dev/ttyUSB0')
+        self.declare_parameter('serial_port', '/dev/ttyACM0')
         self.declare_parameter('baud_rate', 115200)
 
         # Set up serial connection
@@ -48,9 +49,11 @@ class DynamicTransformBroadcaster(Node):
         self.timer = self.create_timer(0.1, self.update)
 
     def setup_serial(self):
-        self.serial_connection = serial.Serial(self.get_parameter('serial_port').value, self.get_parameter('baud_rate').value, timeout=1)
-
-
+        try:
+            self.serial_connection = serial.Serial(self.get_parameter('serial_port').value, self.get_parameter('baud_rate').value, timeout=1)
+            self.get_logger().info('Serial Connection Established')
+        except Exception as e:
+            self.get_logger().error('Failed to establish connection: ' + str(e))
 
     def update_position(self):
         delta_t = 0.1
@@ -64,13 +67,35 @@ class DynamicTransformBroadcaster(Node):
         )
 
         # Update the current position and orientation
-        self.theta = (self.theta + vel_theta * delta_t) % (2 * np.pi)
+        # self.theta += vel_theta * delta_t
+        # self.x += vel_x * delta_t
+        # self.y += vel_y * delta_t
 
-        delta_x = (vel_x * math.cos(self.theta) - vel_y * math.sin(self.theta)) * delta_t
-        delta_y = (vel_x * math.sin(self.theta) + vel_y * math.cos(self.theta)) * delta_t
 
+        self.theta = np.mod(self.theta + vel_theta * delta_t, 2 * np.pi)
+
+        modified_theta = self.theta * 2
+
+        delta_x = (vel_x * math.cos(modified_theta) - vel_y * math.sin(modified_theta)) * delta_t
+        delta_y = (vel_x * math.sin(modified_theta) + vel_y * math.cos(modified_theta)) * delta_t
+        
         self.x += delta_x
         self.y += delta_y
+        # if 0 <= self.theta < np.pi/4:
+            # self.x += delta_x
+            # self.y += delta_y
+        # elif np.pi/4 <= self.theta < np.pi/2:
+        #     self.x += -delta_y
+        #     self.y += delta_x
+        # elif np.pi/2 <= self.theta < np.pi*3/4:
+        #     self.x += -delta_x
+        #     self.y += -delta_y
+        # else:
+        #     self.x += delta_y
+        #     self.y += -delta_x
+        #
+
+        self.get_logger().info(f"Theta: {self.theta}, Encoder Left Front {self.wheel_front_left}, Encoder Right Front {self.wheel_front_right}, Encoder Left Back {self.wheel_back_left}, Encoder Right Back {self.wheel_back_right}")
 
     def update(self):
         # Update position
