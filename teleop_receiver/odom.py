@@ -6,7 +6,6 @@ import numpy as np
 from geometry_msgs.msg import TransformStamped
 from nav_msgs.msg import Odometry
 from rclpy.node import Node
-from tf_transformations import quaternion_from_euler  # Import the quaternion_from_euler function
 
 
 def compute_velocity(wheel_front_left, wheel_front_right, wheel_back_left, wheel_back_right):
@@ -15,18 +14,17 @@ def compute_velocity(wheel_front_left, wheel_front_right, wheel_back_left, wheel
     W = 0.15  # Distance from center to side wheels
 
     # Compute velocities in the robot's local frame
-    vx = (((wheel_front_left + wheel_front_right + wheel_back_left + wheel_back_right) / 4) / 1440) * (r * 2 * np.pi)
-    vy = (((-wheel_front_left + wheel_front_right + wheel_back_left - wheel_back_right) / 4) / 1440) * (r * 2 * np.pi)
+    vx = (((wheel_front_left + wheel_front_right + wheel_back_left + wheel_back_right)/4)/1440) * (r * 2 * np.pi)
+    vy = (((-wheel_front_left + wheel_front_right + wheel_back_left - wheel_back_right)/4)/1440) * (r * 2 * np.pi)
 
     # Compute the angular velocity, accounting for both length (L) and width (W)
     vtheta = math.pi * (r / (4 * (L + W))) * (-wheel_front_left + wheel_front_right - wheel_back_left + wheel_back_right) / 1440
 
     return vx, vy, vtheta
 
-
 class DynamicTransformBroadcaster(Node):
-    def _init_(self):
-        super()._init_('dynamic_tf_broadcaster')
+    def __init__(self):
+        super().__init__('odom_publisher')
         self.serial_connection = None
         self.declare_parameter('serial_port', '/dev/ttyACM0')
         self.declare_parameter('baud_rate', 115200)
@@ -115,11 +113,10 @@ class DynamicTransformBroadcaster(Node):
         odom_msg.pose.pose.position.z = 0.0
 
         # Set rotation using quaternion_from_euler
-        q = quaternion_from_euler(0.0, 0.0, self.theta)  # Assuming theta is the yaw angle
-        odom_msg.pose.pose.orientation.x = q[0]
-        odom_msg.pose.pose.orientation.y = q[1]
-        odom_msg.pose.pose.orientation.z = q[2]
-        odom_msg.pose.pose.orientation.w = q[3]
+        odom_msg.pose.pose.orientation.x = 0.0
+        odom_msg.pose.pose.orientation.y = 0.0
+        odom_msg.pose.pose.orientation.z = math.sin(self.theta)
+        odom_msg.pose.pose.orientation.w = math.cos(self.theta)
 
         # Set linear velocity
         odom_msg.twist.twist.linear.x = (
@@ -146,11 +143,10 @@ class DynamicTransformBroadcaster(Node):
         t.transform.translation.z = 0.0
 
         # Set rotation using quaternion_from_euler
-        q = quaternion_from_euler(0.0, 0.0, theta)
-        t.transform.rotation.x = q[0]
-        t.transform.rotation.y = q[1]
-        t.transform.rotation.z = q[2]
-        t.transform.rotation.w = q[3]
+        t.transform.rotation.x = 0.0
+        t.transform.rotation.y = 0.0
+        t.transform.rotation.z = math.sin(theta)
+        t.transform.rotation.w = math.cos(theta)
 
         # Send the dynamic transform
         self.broadcaster.sendTransform(t)
