@@ -24,7 +24,7 @@ def compute_velocity(wheel_front_left, wheel_front_right, wheel_back_left, wheel
 
 class DynamicTransformBroadcaster(Node):
     def __init__(self):
-        super().__init__('odom_publisher')
+        super().__init__('odom_node')
         self.serial_connection = None
         self.declare_parameter('serial_port', '/dev/ttyACM0')
         self.declare_parameter('baud_rate', 115200)
