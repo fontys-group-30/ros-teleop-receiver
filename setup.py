@@ -23,6 +23,7 @@ setup(
             'receiver_node = teleop_receiver.receiver_node:main',
             'static_tf_broadcaster = teleop_receiver.static_tf_broadcaster:main',
             'dynamic_tf_broadcaster = teleop_receiver.dynamic_tf_broadcaster:main',
+            'odom_node = teleop_receiver.odom_node:main',
         ],
     },
 )
