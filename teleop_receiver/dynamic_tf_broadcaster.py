@@ -11,8 +11,6 @@ def compute_velocity(wheel_front_left, wheel_front_right, wheel_back_left, wheel
     r = 0.04  # Wheel radius in meters
     L = 0.08  # Distance from center to front/back wheels
     W = 0.15  # Distance from center to side wheels
-    wheel_front_left *= -1
-    wheel_back_left *= -1
     # Compute velocities in the robot's local frame
     vx = (((wheel_front_left + wheel_front_right + wheel_back_left + wheel_back_right)/4)/1440) * (r * 2 * np.pi)
     vy = (((-wheel_front_left + wheel_front_right + wheel_back_left - wheel_back_right)/4)/1440) * (r * 2 * np.pi)
