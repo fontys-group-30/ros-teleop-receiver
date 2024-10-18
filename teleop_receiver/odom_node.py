@@ -68,8 +68,10 @@ class DynamicTransformBroadcaster(Node):
 
         self.theta = np.mod(self.theta + vel_theta * delta_t, 2 * np.pi)
 
-        delta_x = (vel_x * math.cos(self.theta) - vel_y * math.sin(self.theta)) * delta_t
-        delta_y = (vel_x * math.sin(self.theta) + vel_y * math.cos(self.theta)) * delta_t
+        modified_theta = self.theta * 2
+
+        delta_x = (vel_x * math.cos(modified_theta) - vel_y * math.sin(modified_theta)) * delta_t
+        delta_y = (vel_x * math.sin(modified_theta) + vel_y * math.cos(modified_theta)) * delta_t
 
         self.x += delta_x
         self.y += delta_y
