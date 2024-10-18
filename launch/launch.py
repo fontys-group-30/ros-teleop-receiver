@@ -12,7 +12,7 @@ def generate_launch_description():
     return LaunchDescription([
         Node(
             package='teleop-receiver',
-            executable='dynamic_tf_broadcaster',
+            executable='odom',
             name='odom',
             output='log'
         ),
