@@ -51,7 +51,7 @@ class DynamicTransformBroadcaster(Node):
         self.wheel_back_right = 0.0
 
         # Set up a timer to call update every 0.1 seconds
-        #self.timer = self.create_timer(0.1, self.update)
+        self.timer = self.create_timer(0.1, self.update)
 
     def setup_serial(self):
         self.serial_connection = serial.Serial(self.get_parameter('serial_port').value,
